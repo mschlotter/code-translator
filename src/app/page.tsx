@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
-import { ArrowRightLeft, Code2, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -15,9 +15,47 @@ export default function CodeTranslator() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  // Settings state
+  const [showSettings, setShowSettings] = useState(false);
+  const [serverUrl, setServerUrl] = useState('http://localhost:8080');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
+
+  useEffect(() => {
     setMounted(true);
+    const savedUrl = localStorage.getItem('translator_server_url');
+    const savedModel = localStorage.getItem('translator_selected_model');
+    if (savedUrl) setServerUrl(savedUrl);
+    if (savedModel) setSelectedModel(savedModel);
   }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('translator_server_url', serverUrl);
+      localStorage.setItem('translator_selected_model', selectedModel);
+    }
+  }, [mounted, serverUrl, selectedModel]);
+
+  const fetchModels = async () => {
+    setIsFetchingModels(true);
+    try {
+      const url = serverUrl.endsWith('/v1/models') ? serverUrl : `${serverUrl.replace(/\/$/, '')}/v1/models`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch models');
+      const data = await response.json();
+      const models = data.data.map((m: any) => m.id);
+      setAvailableModels(models);
+      if (models.length > 0 && !selectedModel) {
+        setSelectedModel(models[0]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching models:', err);
+      setError('Could not fetch models from server. Please check the URL.');
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
 
   const handleTranslate = async () => {
     if (!sourceCode) return;
@@ -32,6 +70,8 @@ export default function CodeTranslator() {
           sourceLanguage: sourceLang,
           targetLanguage: targetLang,
           code: sourceCode,
+          model: selectedModel,
+          serverUrl: serverUrl,
         }),
       });
 
@@ -55,9 +95,79 @@ export default function CodeTranslator() {
     setTargetLang(sourceLang);
   };
 
+  if (!mounted) return null;
+
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans relative">
+      {/* Settings Toggle */}
+      <button
+        onClick={() => setShowSettings(true)}
+        className="fixed top-4 right-4 p-2 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors text-slate-400 hover:text-white z-40"
+        title="Settings"
+      >
+        <Settings size={20} />
+      </button>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-800">
+              <h2 className="text-lg font-semibold">Server Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="p-1 hover:bg-slate-800 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-400">Server URL</label>
+                <input
+                  type="text"
+                  value={serverUrl}
+                  onChange={(e) => setServerUrl(e.target.value)}
+                  placeholder="http://localhost:8080"
+                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-400">Model</label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    disabled={availableModels.length === 0}
+                    className="flex-1 p-2.5 bg-slate-950 border border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50"
+                  >
+                    {availableModels.length > 0 ? (
+                      availableModels.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))
+                    ) : (
+                      <option value="">No models found</option>
+                    )}
+                  </select>
+                  <button
+                    onClick={fetchModels}
+                    disabled={isFetchingModels}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 rounded-lg transition-colors"
+                    title="Refresh Models"
+                  >
+                    {isFetchingModels ? <Loader2 className="animate-spin" size={18} /> : 'Refresh'}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-all"
+              >
+                Save & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto space-y-8 pt-8">
         {/* Header */}
         <header className="flex flex-col items-center text-center space-y-4">
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium border border-indigo-500/20">
@@ -165,4 +275,6 @@ export default function CodeTranslator() {
     </main>
   );
 }
+// (End of file)
+
 

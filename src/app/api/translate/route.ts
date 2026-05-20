@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { sourceLanguage, targetLanguage, code } = await req.json();
+    const { sourceLanguage, targetLanguage, code, model, serverUrl } = await req.json();
 
     if (!sourceLanguage || !targetLanguage || !code) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -14,13 +14,16 @@ Provide ONLY the translated code. Do not include any explanations, markdown code
 Source code (${sourceLanguage}):
 ${code}`;
 
-    const response = await fetch(process.env.LLAMA_SERVER_URL || 'http://localhost:8080/v1/chat/completions', {
+    const finalUrl = serverUrl || process.env.LLAMA_SERVER_URL || 'http://localhost:8080/v1/chat/completions';
+    const completionsUrl = finalUrl.endsWith('/chat/completions') ? finalUrl : `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
+
+    const response = await fetch(completionsUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "unsloth/gemma-4-31B-it-GGUF:Q4_K_XL",
+        model: model || "unsloth/gemma-4-31B-it-GGUF:Q4_K_XL",
         messages: [
           {
             role: 'system',
