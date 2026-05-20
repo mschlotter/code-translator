@@ -1,10 +1,33 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Editor from '@monaco-editor/react';
+
+const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+
+const LANGUAGE_MAP: Record<string, string> = {
+  "Python": "python",
+  "C": "cpp",
+  "C++": "cpp",
+  "Java": "java",
+  "Javascript": "javascript",
+  "Typescript": "typescript",
+  "Matlab": "matlab",
+  "Lua": "lua",
+  "Scala": "scala",
+  "Julia": "julia",
+  "Go": "go",
+  "C#": "csharp",
+  "Perl": "perl",
+  "PHP": "php",
+  "Ruby": "ruby",
+  "Rust": "rust",
+  "Fortran": "fortran",
+};
 
 export default function CodeTranslator() {
   const [mounted, setMounted] = useState(false);
@@ -14,8 +37,10 @@ export default function CodeTranslator() {
   const [targetLang, setTargetLang] = useState(SUPPORTED_LANGUAGES[1]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastTranslatedLang, setLastTranslatedLang] = useState(SUPPORTED_LANGUAGES[1]);
 
   // Settings state
+
   const [showSettings, setShowSettings] = useState(false);
   const [serverUrl, setServerUrl] = useState('http://localhost:8080');
   const [selectedModel, setSelectedModel] = useState('');
@@ -82,6 +107,7 @@ export default function CodeTranslator() {
 
       const data = await response.json();
       setTargetCode(data.translatedCode);
+      setLastTranslatedLang(targetLang);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
@@ -98,7 +124,7 @@ export default function CodeTranslator() {
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans relative">
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-2 md:p-4 font-sans relative">
       {/* Settings Toggle */}
       <button
         onClick={() => setShowSettings(true)}
@@ -167,17 +193,17 @@ export default function CodeTranslator() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto space-y-8 pt-8">
+      <div className="max-w-[1600px] mx-auto space-y-6 pt-4">
         {/* Header */}
-        <header className="flex flex-col items-center text-center space-y-4">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium border border-indigo-500/20">
-            <Sparkles size={14} />
+        <header className="flex flex-col items-center text-center space-y-3">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">
+            <Sparkles size={12} />
             <span>AI Powered Translation</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
             Code Translator
           </h1>
-          <p className="text-slate-400 max-w-2xl">
+          <p className="text-slate-400 max-w-2xl text-sm md:text-base">
             Seamlessly translate your code between {SUPPORTED_LANGUAGES.length} different programming languages using local LLMs.
           </p>
         </header>
@@ -185,7 +211,7 @@ export default function CodeTranslator() {
         {/* Translator UI */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-start">
           {/* Source Section */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 min-w-0">
             <div className="flex items-center justify-between px-2">
               <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
                 <Code2 size={16} /> Source
@@ -200,15 +226,27 @@ export default function CodeTranslator() {
                 ))}
               </select>
             </div>
-            <div className="relative group">
-              <textarea
+            <div className="relative h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-[#1e1e1e]">
+              <Editor
+                height="100%"
+                defaultLanguage={LANGUAGE_MAP[sourceLang] || 'plaintext'}
+                language={LANGUAGE_MAP[sourceLang] || 'plaintext'}
+                theme="vs-dark"
                 value={sourceCode}
-                onChange={(e) => setSourceCode(e.target.value)}
-                placeholder="Paste your code here..."
-                className="w-full h-[400px] md:h-[600px] p-4 bg-slate-900 border border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono text-sm resize-none shadow-2xl"
+                onChange={(value) => setSourceCode(value || '')}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  fontFamily: MONO_FONT,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  padding: { top: 16, bottom: 16 },
+                }}
               />
             </div>
           </div>
+
 
           {/* Action Section */}
           <div className="flex lg:flex-col justify-center items-center gap-4 py-4 lg:py-0">
@@ -230,7 +268,7 @@ export default function CodeTranslator() {
           </div>
 
           {/* Target Section */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 min-w-0">
             <div className="flex items-center justify-between px-2">
               <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
                 <Code2 size={16} /> Result
@@ -247,13 +285,23 @@ export default function CodeTranslator() {
             </div>
             <div className="relative h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-[#1e1e1e]">
               {mounted && targetCode ? (
-                <SyntaxHighlighter
-                  language={targetLang.toLowerCase()}
-                  style={vscDarkPlus}
-                  customStyle={{ margin: 0, padding: '1rem', height: '100%', fontSize: '0.875rem' }}
-                >
-                  {targetCode}
-                </SyntaxHighlighter>
+                <Editor
+                  height="100%"
+                  defaultLanguage={LANGUAGE_MAP[lastTranslatedLang] || 'plaintext'}
+                  language={LANGUAGE_MAP[lastTranslatedLang] || 'plaintext'}
+                  theme="vs-dark"
+                  value={targetCode}
+                  options={{
+                    readOnly: true,
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    fontFamily: MONO_FONT,
+                    lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    padding: { top: 16, bottom: 16 },
+                  }}
+                />
               ) : (
                 <div className="flex items-center justify-center h-full text-slate-600 font-mono text-sm italic">
                   {targetCode ? 'Loading highlighter...' : 'Translated code will appear here...'}
