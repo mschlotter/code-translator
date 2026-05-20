@@ -5,31 +5,29 @@ import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import Editor from '@monaco-editor/react';
+import CodeMirror from '@uiw/react-codemirror';
+import { python } from '@codemirror/lang-python';
+import { javascript } from '@codemirror/lang-javascript';
+import { cpp } from '@codemirror/lang-cpp';
+import { java } from '@codemirror/lang-java';
+import { go } from '@codemirror/lang-go';
+import { rust } from '@codemirror/lang-rust';
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
-const LANGUAGE_MAP: Record<string, string> = {
-  "Python": "python",
-  "C": "cpp",
-  "C++": "cpp",
-  "Java": "java",
-  "Javascript": "javascript",
-  "Typescript": "typescript",
-  "Matlab": "matlab",
-  "Lua": "lua",
-  "Scala": "scala",
-  "Julia": "julia",
-  "Go": "go",
-  "C#": "csharp",
-  "Perl": "perl",
-  "PHP": "php",
-  "Ruby": "ruby",
-  "Rust": "rust",
-  "Fortran": "fortran",
+const LANGUAGE_EXTENSIONS: Record<string, any> = {
+  "Python": python(),
+  "Javascript": javascript(),
+  "Typescript": javascript(),
+  "C": cpp(),
+  "C++": cpp(),
+  "Java": java(),
+  "Go": go(),
+  "Rust": rust(),
 };
 
 export default function CodeTranslator() {
+
   const [mounted, setMounted] = useState(false);
   const [sourceCode, setSourceCode] = useState('');
   const [targetCode, setTargetCode] = useState('');
@@ -226,22 +224,17 @@ export default function CodeTranslator() {
                 ))}
               </select>
             </div>
-            <div className="relative h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-[#1e1e1e]">
-              <Editor
-                height="100%"
-                defaultLanguage={LANGUAGE_MAP[sourceLang] || 'plaintext'}
-                language={LANGUAGE_MAP[sourceLang] || 'plaintext'}
-                theme="vs-dark"
+            <div className="relative h-[400px] md:h-[600px] rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
+              <CodeMirror
                 value={sourceCode}
-                onChange={(value) => setSourceCode(value || '')}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
+                height="100%"
+                theme="dark"
+                extensions={[...(LANGUAGE_EXTENSIONS[sourceLang] ? [LANGUAGE_EXTENSIONS[sourceLang]] : [])]}
+                onChange={(value) => setSourceCode(value)}
+                className="text-sm font-mono"
+                style={{
                   fontFamily: MONO_FONT,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  padding: { top: 16, bottom: 16 },
+                  height: '100%',
                 }}
               />
             </div>
@@ -283,23 +276,18 @@ export default function CodeTranslator() {
                 ))}
               </select>
             </div>
-            <div className="relative h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-[#1e1e1e]">
+            <div className="relative h-[400px] md:h-[600px] rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
               {mounted && targetCode ? (
-                <Editor
-                  height="100%"
-                  defaultLanguage={LANGUAGE_MAP[lastTranslatedLang] || 'plaintext'}
-                  language={LANGUAGE_MAP[lastTranslatedLang] || 'plaintext'}
-                  theme="vs-dark"
+                <CodeMirror
                   value={targetCode}
-                  options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    fontSize: 14,
+                  height="100%"
+                  theme="dark"
+                  extensions={[...(LANGUAGE_EXTENSIONS[lastTranslatedLang] ? [LANGUAGE_EXTENSIONS[lastTranslatedLang]] : [])]}
+                  readOnly={true}
+                  className="text-sm font-mono"
+                  style={{
                     fontFamily: MONO_FONT,
-                    lineNumbers: 'on',
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                    padding: { top: 16, bottom: 16 },
+                    height: '100%',
                   }}
                 />
               ) : (
@@ -309,6 +297,7 @@ export default function CodeTranslator() {
               )}
             </div>
           </div>
+
         </div>
 
         {/* Error Toast */}
