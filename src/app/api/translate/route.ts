@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { config } from '@/config/server';
 
 export async function POST(req: Request) {
   try {
@@ -8,10 +9,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const maxCodeSize = parseInt(process.env.MAX_CODE_SIZE || '102400', 10);
-    if (code.length > maxCodeSize) {
+    if (code.length > config.maxCodeSize) {
       const sizeInKB = (code.length / 1024).toFixed(1);
-      const maxKB = (maxCodeSize / 1024).toFixed(1);
+      const maxKB = (config.maxCodeSize / 1024).toFixed(1);
       return NextResponse.json(
         { error: `Code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB. Please split your code into smaller files or remove unnecessary content.` },
         { status: 400 }
@@ -24,7 +24,7 @@ Provide ONLY the translated code. Do not include any explanations, markdown code
 Source code (${sourceLanguage}):
 ${code}`;
 
-    const finalUrl = serverUrl || process.env.LLAMA_SERVER_URL || 'http://localhost:8080/v1/chat/completions';
+    const finalUrl = serverUrl || config.llamaServerUrl;
     const completionsUrl = finalUrl.endsWith('/chat/completions') ? finalUrl : `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
     const response = await fetch(completionsUrl, {
