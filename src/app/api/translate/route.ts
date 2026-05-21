@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { config } from '@/config/server';
+import { SUPPORTED_LANGUAGES } from '@/config/languages';
 
 if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
   throw new Error('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required');
@@ -13,8 +14,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (code.length > config.maxCodeSize) {
-      const sizeInKB = (code.length / 1024).toFixed(1);
+    if (!SUPPORTED_LANGUAGES.includes(sourceLanguage)) {
+      return NextResponse.json(
+        { error: `Unsupported source language: ${sourceLanguage}` },
+        { status: 400 }
+      );
+    }
+
+    if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
+      return NextResponse.json(
+        { error: `Unsupported target language: ${targetLanguage}` },
+        { status: 400 }
+      );
+    }
+
+    const codeBytes = new TextEncoder().encode(code).length;
+    if (codeBytes > config.maxCodeSize) {
+      const sizeInKB = (codeBytes / 1024).toFixed(1);
       const maxKB = (config.maxCodeSize / 1024).toFixed(1);
       return NextResponse.json(
         { error: `Code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB. Please split your code into smaller files or remove unnecessary content.` },
@@ -31,26 +47,35 @@ ${code}`;
     const finalUrl = serverUrl ?? process.env.NEXT_PUBLIC_LLAMA_SERVER_URL;
     const completionsUrl = `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
-    const response = await fetch(completionsUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: model || config.defaultModel,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.1,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    let response;
+    try {
+      response = await fetch(completionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model || config.defaultModel,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.1,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorData = await response.text();

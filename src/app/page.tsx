@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { config } from '@/config/server';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
@@ -12,6 +12,7 @@ import { java } from '@codemirror/lang-java';
 import { go } from '@codemirror/lang-go';
 import { rust } from '@codemirror/lang-rust';
 import { php } from '@codemirror/lang-php';
+import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { StreamLanguage } from '@codemirror/language';
 import { fortran } from '@codemirror/legacy-modes/mode/fortran';
@@ -39,34 +40,42 @@ const editorTheme = EditorView.theme({
   ".cm-scroller": { overflow: "auto" },
 });
 
-const LANGUAGE_EXTENSIONS: Record<string, any> = {
-  "Python": python(),
-  "Javascript": javascript(),
-  "Typescript": javascript(),
-  "C": cpp(),
-  "C++": cpp(),
-  "Java": java(),
-  "Go": go(),
-  "Rust": rust(),
-  "PHP": php(),
-  "Fortran": StreamLanguage.define(fortran),
-  "Julia": StreamLanguage.define(julia),
-  "Lua": StreamLanguage.define(lua),
-  "Perl": StreamLanguage.define(perl),
-  "Ruby": StreamLanguage.define(ruby),
-  "Matlab": StreamLanguage.define(octave),
-  "COBOL": StreamLanguage.define(cobol),
-  "Eiffel": StreamLanguage.define(eiffel),
-  "Erlang": StreamLanguage.define(erlang),
-  "Mathematica": StreamLanguage.define(mathematica),
-  "Pascal": StreamLanguage.define(pascal),
-  "R": StreamLanguage.define(r),
-  "Shell": StreamLanguage.define(shell),
-  "Powershell": StreamLanguage.define(powerShell),
-  "Swift": StreamLanguage.define(swift),
-  "TeX": StreamLanguage.define(stex),
-  "TCL": StreamLanguage.define(tcl),
-};
+function getLanguageExtensions(lang: string): Extension[] {
+  const ext = getLanguageExtension(lang);
+  return ext ? [ext] : [];
+}
+
+function getLanguageExtension(lang: string): Extension | null {
+  switch (lang) {
+    case "Python": return python();
+    case "Javascript":
+    case "Typescript": return javascript();
+    case "C":
+    case "C++": return cpp();
+    case "Java": return java();
+    case "Go": return go();
+    case "Rust": return rust();
+    case "PHP": return php();
+    case "Fortran": return StreamLanguage.define(fortran);
+    case "Julia": return StreamLanguage.define(julia);
+    case "Lua": return StreamLanguage.define(lua);
+    case "Perl": return StreamLanguage.define(perl);
+    case "Ruby": return StreamLanguage.define(ruby);
+    case "Matlab": return StreamLanguage.define(octave);
+    case "COBOL": return StreamLanguage.define(cobol);
+    case "Eiffel": return StreamLanguage.define(eiffel);
+    case "Erlang": return StreamLanguage.define(erlang);
+    case "Mathematica": return StreamLanguage.define(mathematica);
+    case "Pascal": return StreamLanguage.define(pascal);
+    case "R": return StreamLanguage.define(r);
+    case "Shell": return StreamLanguage.define(shell);
+    case "Powershell": return StreamLanguage.define(powerShell);
+    case "Swift": return StreamLanguage.define(swift);
+    case "TeX": return StreamLanguage.define(stex);
+    case "TCL": return StreamLanguage.define(tcl);
+    default: return null;
+  }
+}
 
 export default function CodeTranslator() {
   const [mounted, setMounted] = useState(false);
@@ -82,25 +91,42 @@ export default function CodeTranslator() {
   const [selectedModel, setSelectedModel] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-  const fetchModels = async (currentSelectedModel: string) => {
+  const serverUrlRef = useRef(serverUrl);
+
+  useEffect(() => {
+    serverUrlRef.current = serverUrl;
+  }, [serverUrl]);
+
+  const fetchModels = useCallback(async (currentSelectedModel: string) => {
     setIsFetchingModels(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
-      const url = `${serverUrl.replace(/\/$/, '')}/v1/models`;
-      const response = await fetch(url);
+      const url = `${serverUrlRef.current.replace(/\/$/, '')}/v1/models`;
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) throw new Error('Failed to fetch models');
       const data = await response.json();
-      const models = data.data.map((m: any) => m.id);
+      const models = (data.data as Record<string, unknown>[]).map((m) => String(m.id));
       setAvailableModels(models);
       if (models.length > 0 && !currentSelectedModel) setSelectedModel(models[0]);
-    } catch (err: any) {
-      setError('Could not fetch models from server.');
+    } catch (err: unknown) {
+      const e = err as { name?: string };
+      if (e.name !== 'AbortError') {
+        setError('Could not fetch models from server.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsFetchingModels(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const savedModel = localStorage.getItem('translator_selected_model');
     const savedUrl = localStorage.getItem('translator_server_url');
     const model = savedModel || config.defaultModel || '';
@@ -108,20 +134,20 @@ export default function CodeTranslator() {
     setSelectedModel(model);
     setServerUrl(url);
     fetchModels(model);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mounted, fetchModels]);
 
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('translator_server_url', serverUrl);
-      localStorage.setItem('translator_selected_model', selectedModel);
-    }
+    if (!mounted) return;
+    localStorage.setItem('translator_server_url', serverUrl);
+    localStorage.setItem('translator_selected_model', selectedModel);
   }, [mounted, serverUrl, selectedModel]);
 
-  const handleTranslate = async () => {
+  const handleTranslate = useCallback(async () => {
     if (!sourceCode) return;
     setIsLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
@@ -133,7 +159,9 @@ export default function CodeTranslator() {
           model: selectedModel,
           serverUrl,
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Translation failed');
@@ -141,12 +169,16 @@ export default function CodeTranslator() {
       const data = await response.json();
       setTargetCode(data.translatedCode);
       setLastTranslatedLang(targetLang);
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      const e = err as { name?: string; message?: string };
+      if (e.name !== 'AbortError') {
+        setError(e.message || 'An unexpected error occurred');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
-  };
+  }, [sourceCode, sourceLang, targetLang, selectedModel, serverUrl]);
 
   if (!mounted) return null;
 
@@ -192,7 +224,7 @@ export default function CodeTranslator() {
                     {availableModels.length > 0 ? availableModels.map(m => <option key={m} value={m}>{m}</option>) : <option value="">No models found</option>}
                   </select>
                   <button
-                    onClick={fetchModels}
+                    onClick={() => fetchModels(selectedModel)}
                     disabled={isFetchingModels}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 rounded-lg transition-colors"
                   >
@@ -239,7 +271,7 @@ export default function CodeTranslator() {
                 <CodeMirror
                   value={sourceCode}
                   theme="dark"
-                  extensions={[editorTheme, ...(LANGUAGE_EXTENSIONS[sourceLang] ? [LANGUAGE_EXTENSIONS[sourceLang]] : [])]}
+                  extensions={[editorTheme, ...getLanguageExtensions(sourceLang)]}
                   onChange={setSourceCode}
                   className="text-sm font-mono h-full"
                   style={{ fontFamily: MONO_FONT }}
@@ -282,7 +314,7 @@ export default function CodeTranslator() {
                 <CodeMirror
                   value={targetCode}
                   theme="dark"
-                  extensions={[editorTheme, ...(LANGUAGE_EXTENSIONS[lastTranslatedLang] ? [LANGUAGE_EXTENSIONS[lastTranslatedLang]] : [])]}
+                  extensions={[editorTheme, ...getLanguageExtensions(lastTranslatedLang)]}
                   readOnly
                   className="text-sm font-mono h-full"
                   style={{ fontFamily: MONO_FONT }}
