@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { config } from '@/config/server';
-import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
+import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X, Copy, Check } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { javascript } from '@codemirror/lang-javascript';
@@ -91,7 +91,9 @@ export default function CodeTranslator() {
   const [selectedModel, setSelectedModel] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
+  const [copied, setCopied] = useState(false);
   const serverUrlRef = useRef(serverUrl);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     serverUrlRef.current = serverUrl;
@@ -142,6 +144,16 @@ export default function CodeTranslator() {
     localStorage.setItem('translator_selected_model', selectedModel);
   }, [mounted, serverUrl, selectedModel]);
 
+  useEffect(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    if (error) {
+      errorTimerRef.current = setTimeout(() => setError(null), 5000);
+    }
+    return () => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, [error]);
+
   const handleTranslate = useCallback(async () => {
     if (!sourceCode) return;
     setIsLoading(true);
@@ -179,6 +191,25 @@ export default function CodeTranslator() {
       setIsLoading(false);
     }
   }, [sourceCode, sourceLang, targetLang, selectedModel, serverUrl]);
+
+  const handleCopy = useCallback(() => {
+    if (!targetCode) return;
+    navigator.clipboard.writeText(targetCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [targetCode]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isLoading && sourceCode) handleTranslate();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isLoading, sourceCode, handleTranslate]);
 
   if (!mounted) return null;
 
@@ -300,13 +331,24 @@ export default function CodeTranslator() {
           <div className="flex flex-col gap-3 min-w-0">
             <div className="flex items-center justify-between px-2">
               <label className="text-sm font-medium text-slate-400 flex items-center gap-2"><Code2 size={16} /> Result</label>
-              <select
-                value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                className="bg-slate-900 border border-slate-800 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-              >
-                {SUPPORTED_LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-              </select>
+              <div className="flex items-center gap-2">
+                {targetCode && (
+                  <button
+                    onClick={handleCopy}
+                    className="p-1.5 rounded hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                )}
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                >
+                  {SUPPORTED_LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                </select>
+              </div>
             </div>
             <div className="relative h-[400px] md:h-[600px] overflow-hidden rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
               <div className="absolute inset-0">
@@ -330,8 +372,13 @@ export default function CodeTranslator() {
         </div>
 
         {error && (
-          <div className="fixed bottom-8 right-8 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4">
-            <div className="flex items-center gap-2"><span className="font-bold">Error:</span> {error}</div>
+          <div className="fixed bottom-8 right-8 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 max-w-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2"><span className="font-bold">Error:</span> {error}</div>
+              <button onClick={() => setError(null)} className="shrink-0 p-1 hover:bg-red-500/20 rounded transition-colors">
+                <X size={14} />
+              </button>
+            </div>
           </div>
         )}
       </div>
