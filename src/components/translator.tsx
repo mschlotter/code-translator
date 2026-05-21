@@ -415,8 +415,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       ref={panelRef}
       className="fixed z-50 flex flex-col overflow-hidden rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl"
       style={{
-        width: 480,
-        height: 500,
+        width: 640,
+        height: 550,
         left: pos.left || 'auto',
         top: pos.top || 80,
         right: pos.left === 0 ? 32 : 'auto',
