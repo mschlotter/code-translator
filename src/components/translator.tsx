@@ -39,6 +39,18 @@ const editorTheme = EditorView.theme({
   ".cm-scroller": { overflow: "auto" },
 });
 
+const lightEditorTheme = EditorView.theme({
+  "&": { height: "100%", overflow: "hidden" },
+  ".cm-scroller": { overflow: "auto" },
+  ".cm-content": { color: "#24292f" },
+  ".cm-gutters": { background: "#f6f8fa", color: "#1b1f24", border: "none" },
+  ".cm-activeLineGutter": { background: "#f6f8fa" },
+  ".cm-selectionBackground": { background: "#0000001a !important" },
+  ".cm-cursor": { borderLeftColor: "#24292f" },
+  ".cm-lineNumbers": { color: "#1b1f24" },
+  ".cm-special": { color: "#6f42c1" },
+});
+
 function getLanguageExtension(lang: string): Extension | null {
   switch (lang) {
     case "Python": return python();
@@ -87,7 +99,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onChange }) 
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className="bg-slate-900 border border-slate-800 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+    className="bg-[var(--bg-panel)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
   >
     {SUPPORTED_LANGUAGES.map(lang => (
       <option key={lang} value={lang}>{lang}</option>
@@ -106,6 +118,7 @@ interface EditorPanelProps {
   readOnly?: boolean;
   lastTranslatedLang?: string;
   copyButton?: React.ReactNode;
+  theme?: 'dark' | 'light';
 }
 
 const EditorPanel: React.FC<EditorPanelProps> = ({
@@ -117,10 +130,13 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
   readOnly,
   lastTranslatedLang,
   copyButton,
-}) => (
+  theme = 'dark',
+}) => {
+  const isDark = theme === 'dark';
+  return (
   <div className="flex flex-col gap-3 min-w-0">
     <div className="flex items-center justify-between px-2">
-      <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
+      <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
         <Code2 size={16} /> {label}
       </label>
       <div className="flex items-center gap-2">
@@ -128,27 +144,28 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
         <LanguageSelector value={lang} onChange={onLangChange} />
       </div>
     </div>
-    <div className="relative h-[400px] md:h-[600px] overflow-hidden rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
+    <div className={`relative h-[400px] md:h-[600px] overflow-hidden rounded-xl border ${isDark ? 'shadow-2xl border-slate-800 bg-[#1e1e1e]' : 'shadow-lg border-[var(--border-color)] bg-[#ffffff]'}`}>
       <div className="absolute inset-0">
         {code ? (
           <CodeMirror
             value={code}
-            theme="dark"
-            extensions={[editorTheme, ...(readOnly ? getLanguageExtensions(lastTranslatedLang || lang) : getLanguageExtensions(lang))]}
+            theme={isDark ? 'dark' : 'none'}
+            extensions={[(isDark ? editorTheme : lightEditorTheme), ...(readOnly ? getLanguageExtensions(lastTranslatedLang || lang) : getLanguageExtensions(lang))]}
             onChange={onCodeChange}
             readOnly={readOnly}
             className="text-sm font-mono h-full"
             style={{ fontFamily: MONO_FONT }}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-600 font-mono text-sm italic">
+          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] font-mono text-sm italic">
             {label === 'Result' ? 'Translated code will appear here...' : ''}
           </div>
         )}
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // --- TranslationControls ---
 
@@ -168,14 +185,14 @@ const TranslationControls: React.FC<TranslationControlsProps> = ({
   <div className="flex lg:flex-col justify-center items-center gap-4 py-4 lg:py-0">
     <button
       onClick={onSwap}
-      className="p-3 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+      className="p-3 rounded-full bg-[var(--bg-panel)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
     >
       <ArrowRightLeft size={20} />
     </button>
     <button
       onClick={onTranslate}
       disabled={isLoading || !hasSource}
-      className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+      className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--bg-panel)] disabled:text-[var(--text-secondary)] text-white font-semibold rounded-xl transition-all shadow-md shadow-indigo-500/20"
     >
       {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
       {isLoading ? 'Translating...' : 'Translate'}
@@ -196,6 +213,7 @@ interface SettingsModalProps {
   isFetchingModels: boolean;
   onRefreshModels: () => void;
   modelsError: string | null;
+  theme: 'dark' | 'light';
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -214,26 +232,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-slate-800">
-          <h2 className="text-lg font-semibold">Server Settings</h2>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded-full transition-colors">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-color)] w-full max-w-md rounded-2xl shadow-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Server Settings</h2>
+          <button onClick={onClose} className="p-1 hover:bg-[var(--bg-hover)] rounded-full transition-colors text-[var(--text-secondary)]">
             <X size={20} />
           </button>
         </div>
         <div className="p-6 space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Server URL</label>
+            <label className="text-sm font-medium text-[var(--text-secondary)]">Server URL</label>
             <input
               type="text"
               value={serverUrl}
               onChange={(e) => onServerUrlChange(e.target.value)}
               placeholder="http://localhost:8080"
-              className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full p-2.5 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-[var(--text-primary)]"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400">Model</label>
+            <label className="text-sm font-medium text-[var(--text-secondary)]">Model</label>
             {modelsError && (
               <p className="text-xs text-red-400">{modelsError}</p>
             )}
@@ -242,7 +260,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 value={selectedModel}
                 onChange={(e) => onModelChange(e.target.value)}
                 disabled={availableModels.length === 0}
-                className="flex-1 p-2.5 bg-slate-950 border border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50"
+                className="flex-1 p-2.5 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 text-[var(--text-primary)]"
               >
                 {availableModels.length > 0 ? (
                   availableModels.map(m => <option key={m} value={m}>{m}</option>)
@@ -253,7 +271,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 onClick={onRefreshModels}
                 disabled={isFetchingModels}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--bg-panel)] rounded-lg transition-colors text-white"
               >
                 {isFetchingModels ? <Loader2 className="animate-spin" size={18} /> : 'Refresh'}
               </button>
@@ -270,20 +288,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
 // --- Header ---
 
-const Header: React.FC = () => (
-  <header className="flex flex-col items-center text-center space-y-3">
-    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">
-      <Sparkles size={12} />
-      <span>AI Powered Translation</span>
-    </div>
-    <h1 className="text-3xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-      Code Translator
-    </h1>
-    <p className="text-slate-400 max-w-2xl text-sm md:text-base">
-      Translate code between {SUPPORTED_LANGUAGES.length} languages using local LLMs.
-    </p>
-  </header>
-);
+interface HeaderProps {
+  theme: 'dark' | 'light';
+}
+
+const Header: React.FC<HeaderProps> = ({ theme }) => {
+  const titleFrom = theme === 'dark' ? 'from-white' : 'from-[var(--text-primary)]';
+  const titleTo = theme === 'dark' ? 'to-slate-400' : 'to-[var(--text-secondary)]';
+
+  return (
+    <header className="flex flex-col items-center text-center space-y-3">
+      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">
+        <Sparkles size={12} />
+        <span>AI Powered Translation</span>
+      </div>
+      <h1 className={`text-3xl md:text-5xl font-bold tracking-tight bg-gradient-to-r ${titleFrom} ${titleTo} bg-clip-text text-transparent`}>
+        Code Translator
+      </h1>
+      <p className="text-[var(--text-secondary)] max-w-2xl text-sm md:text-base">
+        Translate code between {SUPPORTED_LANGUAGES.length} languages using local LLMs.
+      </p>
+    </header>
+  );
+};
 
 // --- ErrorToast ---
 
@@ -293,7 +320,7 @@ interface ErrorToastProps {
 }
 
 const ErrorToast: React.FC<ErrorToastProps> = ({ error, onClose }) => (
-  <div className="fixed bottom-8 right-8 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 max-w-sm">
+  <div className="fixed bottom-8 right-8 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg shadow-md backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 max-w-sm">
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-2">
         <span className="font-bold">Error:</span> {error}

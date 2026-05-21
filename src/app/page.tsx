@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Settings, Check, Copy } from 'lucide-react';
+import { Settings, Sun, Moon, Check, Copy } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -11,6 +11,8 @@ import {
   SettingsModal,
   ErrorToast,
 } from '@/components/translator';
+
+const THEME_KEY = 'translator_theme';
 
 export default function CodeTranslator() {
   const {
@@ -32,6 +34,21 @@ export default function CodeTranslator() {
   const [targetLang, setTargetLang] = useState('C++');
   const [showSettings, setShowSettings] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   const handleTranslate = useCallback(() => {
     translate(sourceLang, targetLang, sourceCode, selectedModel, serverUrl);
@@ -67,16 +84,23 @@ export default function CodeTranslator() {
   if (!mounted) return null;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-2 md:p-4 font-sans relative">
+    <main className="min-h-screen p-2 md:p-4 font-sans relative" style={{ background: 'var(--bg-page)', color: 'var(--text-primary)' }}>
+      <button
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="fixed top-4 right-20 p-2 rounded-full bg-[var(--bg-panel)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] z-40"
+        title="Toggle theme"
+      >
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
       <button
         onClick={() => setShowSettings(true)}
-        className="fixed top-4 right-4 p-2 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors text-slate-400 hover:text-white z-40"
+        className="fixed top-4 right-4 p-2 rounded-full bg-[var(--bg-panel)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)] z-40"
         title="Settings"
       >
         <Settings size={20} />
       </button>
 
-      <Header />
+      <Header theme={theme} />
 
       <div className="max-w-[1600px] mx-auto space-y-6 pt-4">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 items-start">
@@ -86,6 +110,7 @@ export default function CodeTranslator() {
             onLangChange={setSourceLang}
             code={sourceCode}
             onCodeChange={setSourceCode}
+            theme={theme}
           />
 
           <TranslationControls
@@ -103,11 +128,12 @@ export default function CodeTranslator() {
             onCodeChange={() => {}}
             readOnly
             lastTranslatedLang={lastTranslatedLang}
+            theme={theme}
             copyButton={
               targetCode && (
                 <button
                   onClick={handleCopy}
-                  className="p-1.5 rounded hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
+                  className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   title="Copy to clipboard"
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -129,6 +155,7 @@ export default function CodeTranslator() {
         isFetchingModels={isFetchingModels}
         onRefreshModels={() => fetchModels(selectedModel)}
         modelsError={modelsError}
+        theme={theme}
       />
 
       {error && <ErrorToast error={error} onClose={() => setError(null)} />}

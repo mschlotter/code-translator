@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
+:root {
+  --bg-page: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-hover: #f1f5f9;
+  --bg-input: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #e2e8f0;
+}
+
+[data-theme="dark"] {
+  --bg-page: #020617;
+  --bg-panel: #0f172a;
+  --bg-hover: #1e293b;
+  --bg-input: #020617;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: #1e293b;
+}
+
 body {
-  background: #020617;
-  color: #f8fafc;
+  background: var(--bg-page);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
 }
