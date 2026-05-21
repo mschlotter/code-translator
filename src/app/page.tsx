@@ -70,9 +70,9 @@ const LANGUAGE_EXTENSIONS: Record<string, any> = {
 
 export default function CodeTranslator() {
   const [mounted, setMounted] = useState(false);
-  const [sourceCode, setSourceCode] = useState('');
+  const [sourceCode, setSourceCode] = useState('print("Hello World")');
   const [targetCode, setTargetCode] = useState('');
-  const [sourceLang, setSourceLang] = useState(SUPPORTED_LANGUAGES[0]);
+  const [sourceLang, setSourceLang] = useState('Python');
   const [targetLang, setTargetLang] = useState(SUPPORTED_LANGUAGES[1]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
