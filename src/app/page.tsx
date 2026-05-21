@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
+import { config } from '@/config/server';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, Settings, X } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
@@ -40,14 +41,14 @@ export default function CodeTranslator() {
   const [error, setError] = useState<string | null>(null);
   const [lastTranslatedLang, setLastTranslatedLang] = useState(SUPPORTED_LANGUAGES[1]);
   const [showSettings, setShowSettings] = useState(false);
-  const [serverUrl, setServerUrl] = useState('http://localhost:8080');
+  const [serverUrl, setServerUrl] = useState(config.llamaServerUrl);
   const [selectedModel, setSelectedModel] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setServerUrl(localStorage.getItem('translator_server_url') || 'http://localhost:8080');
+    setServerUrl(localStorage.getItem('translator_server_url') || config.llamaServerUrl);
     setSelectedModel(localStorage.getItem('translator_selected_model') || '');
   }, []);
 
@@ -61,7 +62,8 @@ export default function CodeTranslator() {
   const fetchModels = async () => {
     setIsFetchingModels(true);
     try {
-      const url = serverUrl.endsWith('/v1/models') ? serverUrl : `${serverUrl.replace(/\/$/, '')}/v1/models`;
+      const baseUrl = serverUrl.replace(/\/v1\/chat\/completions$/, '').replace(/\/$/, '');
+      const url = `${baseUrl}/v1/models`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch models');
       const data = await response.json();
@@ -133,7 +135,7 @@ export default function CodeTranslator() {
                   type="text"
                   value={serverUrl}
                   onChange={(e) => setServerUrl(e.target.value)}
-                  placeholder="http://localhost:8080"
+                  placeholder={config.llamaServerUrl}
                   className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 />
               </div>
