@@ -1,13 +1,20 @@
 # Code Translator
 
-Translate code between 26 programming languages using local LLMs via a clean, modern editor interface.
+Translate code between 26 programming languages using local LLMs via a clean, modern editor interface. This tool is built for educational purposes and shall not be used for production-level code!
 
-![Screenshot](https://via.placeholder.com/1200x600/0f172a/f8fafc?text=Code+Translator)
+<table align="center">
+<tbody>
+<tr>
+<td align="center"><img src="docs/images/screenshot_light.png" width=360px style="border: 1px solid #ddd; border-radius: 2px;"></td>
+<td align="center"><img src="docs/images/screenshot_dark.png" width=360px style="border: 1px solid #ddd; border-radius: 2px;"></td>
+</tr>
+</tbody>
+</table>
 
 ## Features
 
 - **26 languages** — Python, JavaScript, TypeScript, C/C++, Java, Go, Rust, PHP, Ruby, Swift, Shell, and more
-- **Local-first** — All translation runs on your machine via `llama-server` (llama.cpp)
+- **Local-first** — All translations run on your machine via `llama-server` (llama.cpp)
 - **Syntax highlighting** — Real-time language-aware highlighting powered by CodeMirror 6
 - **Dark & light themes** — Toggle with one click; preferences persist in localStorage
 - **Keyboard shortcuts** — `Ctrl+Enter` / `Cmd+Enter` to translate instantly
@@ -24,7 +31,7 @@ Translate code between 26 programming languages using local LLMs via a clean, mo
 
 ```bash
 # Clone and install dependencies
-git clone https://github.com/YOUR_USERNAME/code-translator.git
+git clone https://github.com/mschlotter/code-translator.git
 cd code-translator
 npm install
 
@@ -56,10 +63,15 @@ Copy `.env.example` to `.env.local` and set the following:
 
 ### LLM Servers
 
-#### llama.cpp (`llama-server`)
+#### Llama.cpp in router mode
 
+For example:
 ```bash
-llama-server -m models/your-model.gguf --port 11435 --host 127.0.0.1
+llama-server --models-dir ./models --port 11435
+```
+Or using a configuration file:
+```bash
+llama-server --models-preset ./models.ini --port 8080
 ```
 
 ## Project Structure
