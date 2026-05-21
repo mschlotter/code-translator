@@ -10,8 +10,14 @@ import { cpp } from '@codemirror/lang-cpp';
 import { java } from '@codemirror/lang-java';
 import { go } from '@codemirror/lang-go';
 import { rust } from '@codemirror/lang-rust';
+import { EditorView } from '@codemirror/view';
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+
+const editorTheme = EditorView.theme({
+  "&": { height: "100%", overflow: "hidden" },
+  ".cm-scroller": { overflow: "auto" },
+});
 
 const LANGUAGE_EXTENSIONS: Record<string, any> = {
   "Python": python(),
@@ -185,16 +191,17 @@ export default function CodeTranslator() {
                 {SUPPORTED_LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
               </select>
             </div>
-            <div className="relative h-[400px] md:h-[600px] rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
-              <CodeMirror
-                value={sourceCode}
-                height="100%"
-                theme="dark"
-                extensions={[...(LANGUAGE_EXTENSIONS[sourceLang] ? [LANGUAGE_EXTENSIONS[sourceLang]] : [])]}
-                onChange={setSourceCode}
-                className="text-sm font-mono"
-                style={{ fontFamily: MONO_FONT }}
-              />
+            <div className="relative h-[400px] md:h-[600px] rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e] overflow-hidden">
+              <div className="absolute inset-0">
+                <CodeMirror
+                  value={sourceCode}
+                  theme="dark"
+                  extensions={[editorTheme, ...(LANGUAGE_EXTENSIONS[sourceLang] ? [LANGUAGE_EXTENSIONS[sourceLang]] : [])]}
+                  onChange={setSourceCode}
+                  className="text-sm font-mono h-full"
+                  style={{ fontFamily: MONO_FONT }}
+                />
+              </div>
             </div>
           </div>
 
@@ -226,22 +233,23 @@ export default function CodeTranslator() {
                 {SUPPORTED_LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
               </select>
             </div>
-            <div className="relative h-[400px] md:h-[600px] rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
-              {mounted && targetCode ? (
+            <div className="relative h-[400px] md:h-[600px] overflow-hidden rounded-xl border border-slate-800 shadow-2xl bg-[#1e1e1e]">
+              <div className="absolute inset-0">
+                {mounted && targetCode ? (
                 <CodeMirror
                   value={targetCode}
-                  height="100%"
                   theme="dark"
-                  extensions={[...(LANGUAGE_EXTENSIONS[lastTranslatedLang] ? [LANGUAGE_EXTENSIONS[lastTranslatedLang]] : [])]}
+                  extensions={[editorTheme, ...(LANGUAGE_EXTENSIONS[lastTranslatedLang] ? [LANGUAGE_EXTENSIONS[lastTranslatedLang]] : [])]}
                   readOnly
-                  className="text-sm font-mono"
+                  className="text-sm font-mono h-full"
                   style={{ fontFamily: MONO_FONT }}
                 />
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-600 font-mono text-sm italic">
-                  {targetCode ? 'Loading...' : 'Translated code will appear here...'}
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-600 font-mono text-sm italic">
+                    {targetCode ? 'Loading...' : 'Translated code will appear here...'}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
