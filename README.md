@@ -2,14 +2,10 @@
 
 Translate code between 26 programming languages using local LLMs via a clean, modern editor interface. This tool is built for educational purposes and shall not be used for production-level code!
 
-<table align="center">
-<tbody>
-<tr>
-<td align="center"><img src="docs/images/screenshot_light.png" width=360px style="border: 1px solid #ddd; border-radius: 2px;"></td>
-<td align="center"><img src="docs/images/screenshot_dark.png" width=360px style="border: 1px solid #ddd; border-radius: 2px;"></td>
-</tr>
-</tbody>
-</table>
+<div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+  <img src="docs/images/screenshot_light.png" width="360" style="border-radius: 2px;">
+  <img src="docs/images/screenshot_dark.png" width="360" style="border-radius: 2px;">
+</div>
 
 ## Features
 
