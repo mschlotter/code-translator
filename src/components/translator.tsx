@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
-import { ArrowRightLeft, Code2, Sparkles, Loader2, X } from 'lucide-react';
+import { ArrowRightLeft, Code2, Sparkles, Loader2, X, MessageCircle, Send } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
 import { javascript } from '@codemirror/lang-javascript';
@@ -146,7 +146,11 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
     </div>
     <div className={`relative h-[400px] md:h-[600px] overflow-hidden rounded-xl border ${isDark ? 'shadow-2xl border-slate-800 bg-[#1e1e1e]' : 'shadow-lg border-[var(--border-color)] bg-[#ffffff]'}`}>
       <div className="absolute inset-0">
-        {code ? (
+        {readOnly && !code ? (
+          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] font-mono text-sm italic">
+            Translated code will appear here...
+          </div>
+        ) : (
           <CodeMirror
             value={code}
             theme={isDark ? 'dark' : 'none'}
@@ -156,10 +160,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
             className="text-sm font-mono h-full"
             style={{ fontFamily: MONO_FONT }}
           />
-        ) : (
-          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] font-mono text-sm italic">
-            {label === 'Result' ? 'Translated code will appear here...' : ''}
-          </div>
         )}
       </div>
     </div>
@@ -332,10 +332,140 @@ const ErrorToast: React.FC<ErrorToastProps> = ({ error, onClose }) => (
   </div>
 );
 
+// --- ChatPanel ---
+
+interface ChatPanelProps {
+  open: boolean;
+  onClose: () => void;
+  messages: { role: 'user' | 'assistant'; content: string }[];
+  isLoading: boolean;
+  onSend: (question: string) => void;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({
+  open,
+  onClose,
+  messages,
+  isLoading,
+  onSend,
+}) => {
+  const [question, setQuestion] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSubmit = useCallback(() => {
+    if (question.trim() && !isLoading) {
+      onSend(question.trim());
+      setQuestion('');
+    }
+  }, [question, isLoading, onSend]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }, [handleSubmit]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-end justify-end pointer-events-none">
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+        onClick={onClose}
+      />
+      <div className="relative w-full md:w-[480px] h-[70vh] md:h-[80vh] md:max-h-[600px] mr-4 mb-4 md:mb-8 md:mr-8 bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-2xl shadow-2xl flex flex-col pointer-events-auto overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)] shrink-0">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <MessageCircle size={18} />
+              Ask About Code
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Analyzing: Source + Translated Code
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-[var(--bg-hover)] rounded-full transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary)]">
+              <MessageCircle size={32} className="mb-3 opacity-50" />
+              <p className="text-sm font-medium">Ask a question about your code</p>
+              <p className="text-xs mt-1 opacity-70">
+                I can help explain, compare, or answer questions about your source and translated code.
+              </p>
+            </div>
+          )}
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'bg-indigo-600 text-white rounded-br-md'
+                    : 'bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-bl-md'
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-[var(--bg-hover)] text-[var(--text-primary)] px-3.5 py-2.5 rounded-2xl rounded-bl-md">
+                <Loader2 className="animate-spin" size={16} />
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="p-3 border-t border-[var(--border-color)] shrink-0">
+          <div className="flex gap-2">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask a question..."
+              rows={2}
+              className="flex-1 resize-none bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-[var(--text-primary)] text-sm placeholder:text-[var(--text-secondary)]"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !question.trim()}
+              className="self-end px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--bg-panel)] disabled:text-[var(--text-secondary)] text-white rounded-xl transition-all shrink-0"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+          <p className="text-[10px] text-[var(--text-secondary)] text-center mt-1.5">
+            Ctrl+Enter to send
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export {
   Header,
   EditorPanel,
   TranslationControls,
   SettingsModal,
   ErrorToast,
+  ChatPanel,
 };
+

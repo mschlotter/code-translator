@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Settings, Sun, Moon, Check, Copy } from 'lucide-react';
+import { Settings, Sun, Moon, Check, Copy, MessageCircle } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useChat } from '@/hooks/useChat';
 import {
   Header,
   EditorPanel,
   TranslationControls,
   SettingsModal,
   ErrorToast,
+  ChatPanel,
 } from '@/components/translator';
 
 const THEME_KEY = 'translator_theme';
@@ -33,8 +35,11 @@ export default function CodeTranslator() {
   const [sourceLang, setSourceLang] = useState('Python');
   const [targetLang, setTargetLang] = useState('C++');
   const [showSettings, setShowSettings] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [copied, setCopied] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  const { messages, isLoading: chatLoading, sendMessage: sendChatMessage } = useChat();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -99,6 +104,17 @@ export default function CodeTranslator() {
       >
         <Settings size={20} />
       </button>
+      <button
+        onClick={() => setShowChat(!showChat)}
+        className={`fixed top-4 right-36 p-2 rounded-full bg-[var(--bg-panel)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors z-40 ${
+          showChat
+            ? 'text-indigo-400 border-indigo-500/30'
+            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+        }`}
+        title="Ask about code"
+      >
+        <MessageCircle size={20} />
+      </button>
 
       <Header theme={theme} />
 
@@ -159,6 +175,14 @@ export default function CodeTranslator() {
       />
 
       {error && <ErrorToast error={error} onClose={() => setError(null)} />}
+
+      <ChatPanel
+        open={showChat}
+        onClose={() => setShowChat(false)}
+        messages={messages}
+        isLoading={chatLoading}
+        onSend={(question) => sendChatMessage(question, sourceCode, targetCode, sourceLang, targetLang, selectedModel, serverUrl)}
+      />
     </main>
   );
 }
