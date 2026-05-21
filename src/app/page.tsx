@@ -62,8 +62,7 @@ export default function CodeTranslator() {
   const fetchModels = async () => {
     setIsFetchingModels(true);
     try {
-      const baseUrl = serverUrl.replace(/\/v1\/chat\/completions$/, '').replace(/\/$/, '');
-      const url = `${baseUrl}/v1/models`;
+      const url = `${serverUrl.replace(/\/$/, '')}/v1/models`;
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch models');
       const data = await response.json();

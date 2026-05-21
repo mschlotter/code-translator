@@ -25,7 +25,7 @@ Source code (${sourceLanguage}):
 ${code}`;
 
     const finalUrl = serverUrl ?? process.env.NEXT_PUBLIC_LLAMA_SERVER_URL;
-    const completionsUrl = finalUrl.endsWith('/chat/completions') ? finalUrl : `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
+    const completionsUrl = `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
     const response = await fetch(completionsUrl, {
       method: 'POST',
