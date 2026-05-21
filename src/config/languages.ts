@@ -1,6 +1,5 @@
 export const SUPPORTED_LANGUAGES = [
   "C",
-  "C#",
   "C++",
   "Fortran",
   "Go",
@@ -14,6 +13,5 @@ export const SUPPORTED_LANGUAGES = [
   "Python",
   "Ruby",
   "Rust",
-  "Scala",
   "Typescript",
 ];

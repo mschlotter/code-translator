@@ -13,6 +13,13 @@ import { go } from '@codemirror/lang-go';
 import { rust } from '@codemirror/lang-rust';
 import { php } from '@codemirror/lang-php';
 import { EditorView } from '@codemirror/view';
+import { StreamLanguage } from '@codemirror/language';
+import { fortran } from '@codemirror/legacy-modes/mode/fortran';
+import { julia } from '@codemirror/legacy-modes/mode/julia';
+import { lua } from '@codemirror/legacy-modes/mode/lua';
+import { perl } from '@codemirror/legacy-modes/mode/perl';
+import { ruby } from '@codemirror/legacy-modes/mode/ruby';
+import { octave } from '@codemirror/legacy-modes/mode/octave';
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
@@ -31,6 +38,12 @@ const LANGUAGE_EXTENSIONS: Record<string, any> = {
   "Go": go(),
   "Rust": rust(),
   "PHP": php(),
+  "Fortran": StreamLanguage.define(fortran),
+  "Julia": StreamLanguage.define(julia),
+  "Lua": StreamLanguage.define(lua),
+  "Perl": StreamLanguage.define(perl),
+  "Ruby": StreamLanguage.define(ruby),
+  "Matlab": StreamLanguage.define(octave),
 };
 
 export default function CodeTranslator() {
