@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, X, MessageCircle, Send } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
@@ -444,7 +446,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary)]">
             <MessageCircle size={32} className="mb-3 opacity-50" />
@@ -460,13 +462,21 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+              className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words ${
                 msg.role === 'user'
                   ? 'bg-indigo-600 text-white rounded-br-md'
                   : 'bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-bl-md'
               }`}
             >
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <div className="markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
