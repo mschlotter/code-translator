@@ -24,7 +24,7 @@ export default function CodeTranslator() {
     sourceCode, setSourceCode,
     targetCode, setTargetCode, isLoading,
     error, setError,
-    lastTranslatedLang,
+    lastTranslatedLang, setLastTranslatedLang,
     translate,
   } = useTranslation();
 
@@ -42,6 +42,7 @@ export default function CodeTranslator() {
     setTargetCode(sourceCode);
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
+    setLastTranslatedLang(sourceLang);
   }, [targetCode, sourceCode, targetLang, sourceLang, setSourceCode, setTargetCode]);
 
   const handleCopy = useCallback(() => {
