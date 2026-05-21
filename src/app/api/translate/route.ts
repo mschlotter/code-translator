@@ -8,6 +8,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const maxCodeSize = parseInt(process.env.MAX_CODE_SIZE || '102400', 10);
+    if (code.length > maxCodeSize) {
+      const sizeInKB = (code.length / 1024).toFixed(1);
+      const maxKB = (maxCodeSize / 1024).toFixed(1);
+      return NextResponse.json(
+        { error: `Code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB. Please split your code into smaller files or remove unnecessary content.` },
+        { status: 400 }
+      );
+    }
+
     const prompt = `Translate the following code from ${sourceLanguage} to ${targetLanguage}. 
 Provide ONLY the translated code. Do not include any explanations, markdown code blocks, or additional text.
 
