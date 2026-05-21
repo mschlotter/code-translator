@@ -11,6 +11,7 @@ import { cpp } from '@codemirror/lang-cpp';
 import { java } from '@codemirror/lang-java';
 import { go } from '@codemirror/lang-go';
 import { rust } from '@codemirror/lang-rust';
+import { php } from '@codemirror/lang-php';
 import { EditorView } from '@codemirror/view';
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
@@ -29,6 +30,7 @@ const LANGUAGE_EXTENSIONS: Record<string, any> = {
   "Java": java(),
   "Go": go(),
   "Rust": rust(),
+  "PHP": php(),
 };
 
 export default function CodeTranslator() {
