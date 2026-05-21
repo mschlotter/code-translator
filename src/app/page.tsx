@@ -20,6 +20,17 @@ import { lua } from '@codemirror/legacy-modes/mode/lua';
 import { perl } from '@codemirror/legacy-modes/mode/perl';
 import { ruby } from '@codemirror/legacy-modes/mode/ruby';
 import { octave } from '@codemirror/legacy-modes/mode/octave';
+import { cobol } from '@codemirror/legacy-modes/mode/cobol';
+import { eiffel } from '@codemirror/legacy-modes/mode/eiffel';
+import { erlang } from '@codemirror/legacy-modes/mode/erlang';
+import { mathematica } from '@codemirror/legacy-modes/mode/mathematica';
+import { pascal } from '@codemirror/legacy-modes/mode/pascal';
+import { r } from '@codemirror/legacy-modes/mode/r';
+import { shell } from '@codemirror/legacy-modes/mode/shell';
+import { swift } from '@codemirror/legacy-modes/mode/swift';
+import { stex } from '@codemirror/legacy-modes/mode/stex';
+import { tcl } from '@codemirror/legacy-modes/mode/tcl';
+import { powerShell } from '@codemirror/legacy-modes/mode/powershell';
 
 const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
@@ -44,6 +55,17 @@ const LANGUAGE_EXTENSIONS: Record<string, any> = {
   "Perl": StreamLanguage.define(perl),
   "Ruby": StreamLanguage.define(ruby),
   "Matlab": StreamLanguage.define(octave),
+  "COBOL": StreamLanguage.define(cobol),
+  "Eiffel": StreamLanguage.define(eiffel),
+  "Erlang": StreamLanguage.define(erlang),
+  "Mathematica": StreamLanguage.define(mathematica),
+  "Pascal": StreamLanguage.define(pascal),
+  "R": StreamLanguage.define(r),
+  "Shell": StreamLanguage.define(shell),
+  "Powershell": StreamLanguage.define(powerShell),
+  "Swift": StreamLanguage.define(swift),
+  "TeX": StreamLanguage.define(stex),
+  "TCL": StreamLanguage.define(tcl),
 };
 
 export default function CodeTranslator() {
