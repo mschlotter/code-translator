@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { config } from '@/config/server';
 
+if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
+  throw new Error('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required');
+}
+
 export async function POST(req: Request) {
   try {
     const { sourceLanguage, targetLanguage, code, model, serverUrl } = await req.json();
@@ -33,7 +37,7 @@ ${code}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model || "unsloth/gemma-4-31B-it-GGUF:Q4_K_XL",
+        model: model || config.defaultModel,
         messages: [
           {
             role: 'system',

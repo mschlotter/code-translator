@@ -82,21 +82,7 @@ export default function CodeTranslator() {
   const [selectedModel, setSelectedModel] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setServerUrl(localStorage.getItem('translator_server_url') || config.llamaServerUrl);
-    setSelectedModel(localStorage.getItem('translator_selected_model') || '');
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('translator_server_url', serverUrl);
-      localStorage.setItem('translator_selected_model', selectedModel);
-    }
-  }, [mounted, serverUrl, selectedModel]);
-
-  const fetchModels = async () => {
+  const fetchModels = async (currentSelectedModel: string) => {
     setIsFetchingModels(true);
     try {
       const url = `${serverUrl.replace(/\/$/, '')}/v1/models`;
@@ -105,13 +91,32 @@ export default function CodeTranslator() {
       const data = await response.json();
       const models = data.data.map((m: any) => m.id);
       setAvailableModels(models);
-      if (models.length > 0 && !selectedModel) setSelectedModel(models[0]);
+      if (models.length > 0 && !currentSelectedModel) setSelectedModel(models[0]);
     } catch (err: any) {
       setError('Could not fetch models from server.');
     } finally {
       setIsFetchingModels(false);
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+    const savedModel = localStorage.getItem('translator_selected_model');
+    const savedUrl = localStorage.getItem('translator_server_url');
+    const model = savedModel || config.defaultModel || '';
+    const url = savedUrl || config.llamaServerUrl;
+    setSelectedModel(model);
+    setServerUrl(url);
+    fetchModels(model);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('translator_server_url', serverUrl);
+      localStorage.setItem('translator_selected_model', selectedModel);
+    }
+  }, [mounted, serverUrl, selectedModel]);
 
   const handleTranslate = async () => {
     if (!sourceCode) return;
@@ -245,7 +250,7 @@ export default function CodeTranslator() {
 
           <div className="flex lg:flex-col justify-center items-center gap-4 py-4 lg:py-0">
             <button
-              onClick={() => { setSourceLang(targetLang); setTargetLang(sourceLang); }}
+              onClick={() => { setSourceCode(targetCode); setTargetCode(sourceCode); setSourceLang(targetLang); setTargetLang(sourceLang); }}
               className="p-3 rounded-full bg-slate-900 border border-slate-800 hover:bg-slate-800 transition-colors text-slate-400 hover:text-white"
             >
               <ArrowRightLeft size={20} />
