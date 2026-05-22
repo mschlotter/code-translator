@@ -27,7 +27,7 @@ src/
 ├── components/
 │   └── translator.tsx             # Header, EditorPanel, TranslationControls, SettingsModal, ErrorToast
 ├── hooks/
-│   ├── useSettings.ts             # Theme, server URL, model state + model fetching
+│   ├── useSettings.ts             # Server URL, model state + model fetching
 │   └── useTranslation.ts          # Translation state, API call, error auto-dismiss
 └── config/
     ├── languages.ts               # 26 supported language strings
@@ -61,7 +61,8 @@ src/
 - `setMounted(true)` in a separate `useEffect` with `[]` deps is the correct pattern — do not suppress the ESLint rule.
 
 ### State Management
-- **`useSettings` hook** — owns server URL, selected model, available models, theme. Persists `translator_server_url`, `translator_selected_model`, and `translator_theme` to `localStorage`.
+- **`useSettings` hook** — owns server URL, selected model, available models. Persists `translator_server_url` and `translator_selected_model` to `localStorage`.
+- **Theme** — managed as local state in `page.tsx` with its own `useState` / `useEffect` for `localStorage` persistence (`translator_theme`) and `data-theme` DOM attribute.
 - **`useTranslation` hook** — owns `sourceCode`, `targetCode`, `isLoading`, `error`, `lastTranslatedLang`. The `translate()` function accepts all 5 parameters explicitly rather than reading from closure.
 - Error messages auto-dismiss after 5 seconds.
 - All state setters are stable — they do **not** need to be in `useCallback` dependency arrays.
