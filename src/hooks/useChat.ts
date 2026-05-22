@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { TIMEOUT } from '@/config/constants';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -49,7 +50,7 @@ export function useChat(): UseChatReturn {
     setMessages(prev => [...prev, { role: 'user', content: question.trim() }]);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
 
     try {
       const response = await fetch('/api/chat', {
