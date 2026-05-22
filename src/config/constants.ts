@@ -1,5 +1,5 @@
 export const TIMEOUT = {
-  LLM_SERVER_FETCH: 120_000,
+  SERVER_FETCH: 120_000,
   TRANSLATION_FETCH: 150_000,
   MODELS_FETCH: 10_000,
   ERROR_AUTO_DISMISS: 30_000,
@@ -9,5 +9,10 @@ export const TIMEOUT = {
 export const CHAT_PANEL = {
   WIDTH: 640,
   HEIGHT: 550,
+} as const;
+
+export const LLM = {
+  TEMPERATURE: 0.1,
+  MAX_TOKENS: 4096,
 } as const;
 

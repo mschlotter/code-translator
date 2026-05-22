@@ -1,7 +1,5 @@
 import { config } from '@/config/server';
-import { TIMEOUT } from '@/config/constants';
-
-const LLM_TEMPERATURE = 0.1;
+import { LLM, TIMEOUT } from '@/config/constants';
 
 interface CallLlmParams {
   serverUrl: string;
@@ -11,7 +9,7 @@ interface CallLlmParams {
 
 export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Promise<string> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.LLM_SERVER_FETCH);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.SERVER_FETCH);
 
   try {
     const completionsUrl = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
@@ -20,7 +18,8 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
     const body = JSON.stringify({
       model: resolvedModel,
       messages,
-      temperature: LLM_TEMPERATURE,
+      temperature: LLM.TEMPERATURE,
+      max_tokens: LLM.MAX_TOKENS,
     });
     console.log('[callLlm] URL:', completionsUrl, 'Model:', resolvedModel, 'Messages:', messages.length, 'Total body bytes:', new TextEncoder().encode(body).length);
     const start = Date.now();
