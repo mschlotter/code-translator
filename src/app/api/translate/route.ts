@@ -3,12 +3,15 @@ import { config } from '@/config/server';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { callLlm } from '@/lib/callLlm';
 
-if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
-  throw new Error('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required');
-}
-
 export async function POST(req: Request) {
   try {
+    if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
+      return NextResponse.json(
+        { error: 'NEXT_PUBLIC_DEFAULT_MODEL environment variable is required' },
+        { status: 500 }
+      );
+    }
+
     const { sourceLanguage, targetLanguage, code, model, serverUrl } = await req.json();
 
     if (!sourceLanguage || !targetLanguage || !code) {

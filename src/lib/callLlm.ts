@@ -21,9 +21,6 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
       temperature: LLM.TEMPERATURE,
       max_tokens: LLM.MAX_TOKENS,
     });
-    console.log('[callLlm] URL:', completionsUrl, 'Model:', resolvedModel, 'Messages:', messages.length, 'Total body bytes:', new TextEncoder().encode(body).length);
-    const start = Date.now();
-
     const response = await fetch(completionsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -33,14 +30,14 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error(`Llama server error (${response.status}):`, errorData);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(`Llama server error (${response.status}):`, errorData);
+      }
       if (response.status === 0) {
         throw new Error('The LLM server did not respond. Is it running?');
       }
       throw new Error(`Llama server responded with status: ${response.status} - ${errorData}`);
     }
-
-    console.log('[callLlm] Response:', response.status, 'in', ((Date.now() - start) / 1000).toFixed(1), 's');
 
     const data = await response.json();
     if (!data?.choices?.[0]?.message?.content) {
