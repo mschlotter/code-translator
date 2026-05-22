@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { config } from '@/config/server';
-import { TIMEOUT } from '@/config/constants';
+import { useAutoDismiss } from './useAutoDismiss';
 
 export function useSettings() {
   const [mounted, setMounted] = useState(false);
@@ -19,12 +19,7 @@ export function useSettings() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (modelsError) {
-      const timer = setTimeout(() => setModelsError(null), TIMEOUT.ERROR_AUTO_DISMISS);
-      return () => clearTimeout(timer);
-    }
-  }, [modelsError]);
+  useAutoDismiss(modelsError, () => setModelsError(null));
 
   const fetchModels = useCallback(async (model: string) => {
     setIsFetchingModels(true);

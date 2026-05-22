@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { TIMEOUT } from '@/config/constants';
+import { useState, useCallback } from 'react';
+import { useAutoDismiss } from './useAutoDismiss';
 
 export function useTranslation() {
   const [sourceCode, setSourceCode] = useState('print("Hello World")');
@@ -8,12 +8,7 @@ export function useTranslation() {
   const [error, setError] = useState<string | null>(null);
   const [lastTranslatedLang, setLastTranslatedLang] = useState('');
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), TIMEOUT.ERROR_AUTO_DISMISS);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  useAutoDismiss(error, () => setError(null));
 
   const translate = useCallback(async (
     sourceLang: string,

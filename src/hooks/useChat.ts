@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { TIMEOUT } from '@/config/constants';
+import { useState, useCallback } from 'react';
+import { useAutoDismiss } from './useAutoDismiss';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -26,12 +26,7 @@ export function useChat(): UseChatReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  useAutoDismiss(error, () => setError(null));
 
   const sendMessage = useCallback(async (
     question: string,
