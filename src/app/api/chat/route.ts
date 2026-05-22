@@ -1,66 +1,40 @@
 import { NextResponse } from 'next/server';
-import { config } from '@/config/server';
-import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { callLlm } from '@/lib/callLlm';
+import {
+  errorResponse,
+  validateLanguage,
+  validateCodeSize,
+  resolveServerUrl,
+  handleServerError,
+} from '@/lib/apiValidators';
 
 export async function POST(req: Request) {
   try {
     if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
-      return NextResponse.json(
-        { error: 'NEXT_PUBLIC_DEFAULT_MODEL environment variable is required' },
-        { status: 500 }
-      );
+      return errorResponse('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required', 500);
     }
 
     const { sourceLanguage, targetLanguage, question, sourceCode, targetCode, model, serverUrl } = await req.json();
 
     if (!question) {
-      return NextResponse.json({ error: 'Missing required field: question' }, { status: 400 });
+      return errorResponse('Missing required field: question', 400);
     }
 
     if (!sourceLanguage || !targetLanguage) {
-      return NextResponse.json(
-        { error: 'Missing required fields: sourceLanguage and targetLanguage are required' },
-        { status: 400 }
-      );
+      return errorResponse('Missing required fields: sourceLanguage and targetLanguage are required', 400);
     }
 
-    if (!SUPPORTED_LANGUAGES.includes(sourceLanguage)) {
-      return NextResponse.json(
-        { error: `Unsupported source language: ${sourceLanguage}` },
-        { status: 400 }
-      );
-    }
-
-    if (!SUPPORTED_LANGUAGES.includes(targetLanguage)) {
-      return NextResponse.json(
-        { error: `Unsupported target language: ${targetLanguage}` },
-        { status: 400 }
-      );
-    }
+    const langError = validateLanguage(sourceLanguage, 'source') ?? validateLanguage(targetLanguage, 'target');
+    if (langError) return langError;
 
     if (sourceCode) {
-      const sourceBytes = new TextEncoder().encode(sourceCode).length;
-      if (sourceBytes > config.maxCodeSize) {
-        const sizeInKB = (sourceBytes / 1024).toFixed(1);
-        const maxKB = (config.maxCodeSize / 1024).toFixed(1);
-        return NextResponse.json(
-          { error: `Source code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB.` },
-          { status: 400 }
-        );
-      }
+      const sizeError = validateCodeSize(sourceCode, 'Source');
+      if (sizeError) return sizeError;
     }
 
     if (targetCode) {
-      const targetBytes = new TextEncoder().encode(targetCode).length;
-      if (targetBytes > config.maxCodeSize) {
-        const sizeInKB = (targetBytes / 1024).toFixed(1);
-        const maxKB = (config.maxCodeSize / 1024).toFixed(1);
-        return NextResponse.json(
-          { error: `Target code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB.` },
-          { status: 400 }
-        );
-      }
+      const sizeError = validateCodeSize(targetCode, 'Target');
+      if (sizeError) return sizeError;
     }
 
     const codeContext: string[] = [];
@@ -76,10 +50,8 @@ export async function POST(req: Request) {
     let userPrompt = `I have the following code available for reference:\n\n${codeContext.join('\n\n')}\n\n`;
     userPrompt += `Question: ${question}`;
 
-    const finalUrl = serverUrl ?? process.env.NEXT_PUBLIC_LLAMA_SERVER_URL;
-
     const answer = await callLlm({
-      serverUrl: finalUrl,
+      serverUrl: resolveServerUrl(serverUrl),
       model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -89,8 +61,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ answer });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    console.error('Chat error:', error);
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return handleServerError(error, 'Chat');
   }
 }
