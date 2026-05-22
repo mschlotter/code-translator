@@ -6,14 +6,12 @@ import { TIMEOUT } from '@/config/constants';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useChat } from '@/hooks/useChat';
-import {
-  Header,
-  EditorPanel,
-  TranslationControls,
-  SettingsModal,
-  ErrorToast,
-  ChatPanel,
-} from '@/components/translator';
+import { Header } from '@/components/Header';
+import { EditorPanel } from '@/components/EditorPanel';
+import { TranslationControls } from '@/components/TranslationControls';
+import { SettingsModal } from '@/components/SettingsModal';
+import { ErrorToast } from '@/components/ErrorToast';
+import { ChatPanel } from '@/components/ChatPanel';
 
 const THEME_KEY = 'translator_theme';
 
