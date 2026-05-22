@@ -358,7 +358,17 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const [pos, setPos] = useState<{ left: number | null; top: number | null }>({ left: null, top: null });
+  const [pos, setPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+
+  useEffect(() => {
+    const center = () => setPos({
+      left: Math.max(0, (window.innerWidth - CHAT_PANEL.WIDTH) / 2),
+      top: Math.max(0, (window.innerHeight - CHAT_PANEL.HEIGHT) / 2),
+    });
+    center();
+    window.addEventListener('resize', center);
+    return () => window.removeEventListener('resize', center);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -427,10 +437,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       style={{
         width: CHAT_PANEL.WIDTH,
         height: CHAT_PANEL.HEIGHT,
-        left: pos.left ?? 'auto',
-        top: pos.top ?? CHAT_PANEL.DEFAULT_TOP,
-        right: pos.left === null ? CHAT_PANEL.DEFAULT_RIGHT : 'auto',
-        transition: isDragging ? 'none' : 'left 0.2s, top 0.2s, right 0.2s',
+        left: pos.left,
+        top: pos.top,
+        transition: isDragging ? 'none' : 'left 0.2s, top 0.2s',
       }}
     >
       <div

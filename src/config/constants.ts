@@ -8,7 +8,5 @@ export const TIMEOUT = {
 export const CHAT_PANEL = {
   WIDTH: 640,
   HEIGHT: 550,
-  DEFAULT_TOP: 80,
-  DEFAULT_RIGHT: 32,
 } as const;
 
