@@ -84,36 +84,6 @@ body {
   width: 100%;
 }
 
-.markdown-content pre {
-  background: var(--bg-hover);
-  padding: 0.5em 0.75em;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 0.3em 0;
-}
-
-.markdown-content li {
-  margin: 0.25em 0;
-}
-
-.markdown-content blockquote {
-  border-left: 3px solid var(--border-color);
-  padding-left: 0.75em;
-  margin: 0.5em 0;
-  color: var(--text-secondary);
-}
-
-.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 {
-  margin: 0.75em 0 0.25em;
-  font-weight: 600;
-}
-
-.markdown-content table {
-  border-collapse: collapse;
-  margin: 0.75em 0;
-  width: 100%;
-}
-
 .markdown-content th, .markdown-content td {
   border: 1px solid var(--border-color);
   padding: 0.4em 0.6em;

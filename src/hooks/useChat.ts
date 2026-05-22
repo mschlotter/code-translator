@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAutoDismiss } from './useAutoDismiss';
+import { TIMEOUT } from '@/config/constants';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

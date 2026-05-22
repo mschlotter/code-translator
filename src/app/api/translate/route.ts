@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { config } from '@/config/server';
-import { TIMEOUT } from '@/config/constants';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
+import { callLlm } from '@/lib/callLlm';
 
 if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
   throw new Error('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required');
@@ -46,52 +46,15 @@ Source code (${sourceLanguage}):
 ${code}`;
 
     const finalUrl = serverUrl ?? process.env.NEXT_PUBLIC_LLAMA_SERVER_URL;
-    const completionsUrl = `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.LLM_SERVER_FETCH);
-
-    let response;
-    try {
-      response = await fetch(completionsUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: model || config.defaultModel,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0.1,
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`Llama server error (${response.status}):`, errorData);
-      if (response.status === 0) {
-        throw new Error('The LLM server did not respond. Is it running?');
-      }
-      throw new Error(`Llama server responded with status: ${response.status} - ${errorData}`);
-    }
-
-    const data = await response.json();
-    if (!data?.choices?.[0]?.message?.content) {
-      throw new Error('The model returned an empty or invalid response');
-    }
-    const translatedCode = data.choices[0].message.content.trim();
+    const translatedCode = await callLlm({
+      serverUrl: finalUrl,
+      model,
+      messages: [
+        { role: 'system', content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.' },
+        { role: 'user', content: prompt },
+      ],
+    });
 
     return NextResponse.json({ translatedCode });
   } catch (error: unknown) {
