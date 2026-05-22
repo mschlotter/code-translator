@@ -49,7 +49,7 @@ ${code}`;
     const completionsUrl = `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.LLM_SERVER_FETCH);
 
     let response;
     try {
@@ -81,6 +81,9 @@ ${code}`;
     if (!response.ok) {
       const errorData = await response.text();
       console.error(`Llama server error (${response.status}):`, errorData);
+      if (response.status === 0) {
+        throw new Error('The LLM server did not respond. Is it running?');
+      }
       throw new Error(`Llama server responded with status: ${response.status} - ${errorData}`);
     }
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { config } from '@/config/server';
+import { TIMEOUT } from '@/config/constants';
 import { useAutoDismiss } from './useAutoDismiss';
 
 export function useSettings() {

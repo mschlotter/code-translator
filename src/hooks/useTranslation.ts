@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { TIMEOUT } from '@/config/constants';
 import { useAutoDismiss } from './useAutoDismiss';
 
 export function useTranslation() {
