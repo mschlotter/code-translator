@@ -41,8 +41,15 @@ export function useTranslation() {
       });
       clearTimeout(timeoutId);
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Translation failed');
+        let message = 'Translation failed';
+        try {
+          const data = await response.json();
+          message = data.error || message;
+        } catch {
+          const text = await response.text();
+          message = text || message;
+        }
+        throw new Error(message);
       }
       const data = await response.json();
       setTargetCode(data.translatedCode);

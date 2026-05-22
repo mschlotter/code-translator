@@ -84,6 +84,9 @@ ${code}`;
     }
 
     const data = await response.json();
+    if (!data?.choices?.[0]?.message?.content) {
+      throw new Error('The model returned an empty or invalid response');
+    }
     const translatedCode = data.choices[0].message.content.trim();
 
     return NextResponse.json({ translatedCode });
