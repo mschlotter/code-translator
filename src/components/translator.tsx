@@ -358,7 +358,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const [pos, setPos] = useState({ left: 0, top: 0 });
+  const [pos, setPos] = useState<{ left: number | null; top: number | null }>({ left: null, top: null });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -388,6 +388,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     const handleMouseUp = () => {
       isDraggingRef.current = false;
       setIsDragging(false);
+      setPos((prev) => ({
+        left: Math.max(0, Math.min(prev.left, window.innerWidth - CHAT_PANEL.WIDTH)),
+        top: Math.max(0, Math.min(prev.top, window.innerHeight - CHAT_PANEL.HEIGHT)),
+      }));
       if (panelRef.current) {
         panelRef.current.style.transition = 'left 0.2s, top 0.2s';
       }
@@ -423,9 +427,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       style={{
         width: CHAT_PANEL.WIDTH,
         height: CHAT_PANEL.HEIGHT,
-        left: pos.left || 'auto',
-        top: pos.top || CHAT_PANEL.DEFAULT_TOP,
-        right: pos.left === 0 ? CHAT_PANEL.DEFAULT_RIGHT : 'auto',
+        left: pos.left ?? 'auto',
+        top: pos.top ?? CHAT_PANEL.DEFAULT_TOP,
+        right: pos.left === null ? CHAT_PANEL.DEFAULT_RIGHT : 'auto',
         transition: isDragging ? 'none' : 'left 0.2s, top 0.2s, right 0.2s',
       }}
     >
