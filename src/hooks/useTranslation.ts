@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { TIMEOUT } from '@/config/constants';
 
 export function useTranslation() {
   const [sourceCode, setSourceCode] = useState('print("Hello World")');
@@ -9,7 +10,7 @@ export function useTranslation() {
 
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
+      const timer = setTimeout(() => setError(null), TIMEOUT.ERROR_AUTO_DISMISS);
       return () => clearTimeout(timer);
     }
   }, [error]);
@@ -25,7 +26,7 @@ export function useTranslation() {
     setIsLoading(true);
     setError(null);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',

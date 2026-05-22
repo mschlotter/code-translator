@@ -1,0 +1,14 @@
+export const TIMEOUT = {
+  TRANSLATION_FETCH: 120_000,
+  MODELS_FETCH: 10_000,
+  ERROR_AUTO_DISMISS: 5_000,
+  COPY_TOAST_DURATION: 1_500,
+} as const;
+
+export const CHAT_PANEL = {
+  WIDTH: 640,
+  HEIGHT: 550,
+  DEFAULT_TOP: 80,
+  DEFAULT_RIGHT: 32,
+} as const;
+

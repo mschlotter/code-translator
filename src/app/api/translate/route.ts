@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { config } from '@/config/server';
+import { TIMEOUT } from '@/config/constants';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 
 if (!process.env.NEXT_PUBLIC_DEFAULT_MODEL) {
@@ -48,7 +49,7 @@ ${code}`;
     const completionsUrl = `${finalUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
 
     let response;
     try {

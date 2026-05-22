@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { CHAT_PANEL } from '@/config/constants';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 import { ArrowRightLeft, Code2, Sparkles, Loader2, X, MessageCircle, Send } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
@@ -352,6 +353,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   onSend,
 }) => {
   const [question, setQuestion] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -365,6 +367,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const handlePanelMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
     isDraggingRef.current = true;
+    setIsDragging(true);
     const panel = panelRef.current;
     if (!panel) return;
     const rect = panel.getBoundingClientRect();
@@ -384,6 +387,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     };
     const handleMouseUp = () => {
       isDraggingRef.current = false;
+      setIsDragging(false);
       if (panelRef.current) {
         panelRef.current.style.transition = 'left 0.2s, top 0.2s';
       }
@@ -417,12 +421,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       ref={panelRef}
       className="fixed z-50 flex flex-col overflow-hidden rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-color)] shadow-2xl"
       style={{
-        width: 640,
-        height: 550,
+        width: CHAT_PANEL.WIDTH,
+        height: CHAT_PANEL.HEIGHT,
         left: pos.left || 'auto',
-        top: pos.top || 80,
-        right: pos.left === 0 ? 32 : 'auto',
-        transition: isDraggingRef.current ? 'none' : 'left 0.2s, top 0.2s, right 0.2s',
+        top: pos.top || CHAT_PANEL.DEFAULT_TOP,
+        right: pos.left === 0 ? CHAT_PANEL.DEFAULT_RIGHT : 'auto',
+        transition: isDragging ? 'none' : 'left 0.2s, top 0.2s, right 0.2s',
       }}
     >
       <div

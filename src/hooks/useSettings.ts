@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { config } from '@/config/server';
+import { TIMEOUT } from '@/config/constants';
 
 export function useSettings() {
   const [mounted, setMounted] = useState(false);
@@ -20,7 +21,7 @@ export function useSettings() {
 
   useEffect(() => {
     if (modelsError) {
-      const timer = setTimeout(() => setModelsError(null), 5000);
+      const timer = setTimeout(() => setModelsError(null), TIMEOUT.ERROR_AUTO_DISMISS);
       return () => clearTimeout(timer);
     }
   }, [modelsError]);
@@ -28,7 +29,7 @@ export function useSettings() {
   const fetchModels = useCallback(async (model: string) => {
     setIsFetchingModels(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.MODELS_FETCH);
     try {
       const url = `${serverUrlRef.current.replace(/\/$/, '')}/v1/models`;
       const response = await fetch(url, { signal: controller.signal });

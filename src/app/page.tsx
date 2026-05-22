@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Settings, Sun, Moon, Check, Copy, MessageCircle } from 'lucide-react';
+import { TIMEOUT } from '@/config/constants';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useChat } from '@/hooks/useChat';
@@ -71,7 +72,7 @@ export default function CodeTranslator() {
     if (!targetCode) return;
     navigator.clipboard.writeText(targetCode).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), TIMEOUT.COPY_TOAST_DURATION);
     });
   }, [targetCode]);
 
