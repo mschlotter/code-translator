@@ -33,7 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[var(--bg-panel)] border border-[var(--border-color)] w-full max-w-md rounded-2xl shadow-lg overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-color)] w-full max-w-lg rounded-2xl shadow-lg overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Server Settings</h2>
           <button onClick={onClose} className="p-1 hover:bg-[var(--bg-hover)] rounded-full transition-colors text-[var(--text-secondary)]">
@@ -61,7 +61,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 value={selectedModel}
                 onChange={(e) => onModelChange(e.target.value)}
                 disabled={availableModels.length === 0}
-                className="flex-1 p-2.5 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 text-[var(--text-primary)]"
+                className="flex-1 min-w-0 p-2.5 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 text-[var(--text-primary)]"
               >
                 {availableModels.length > 0 ? (
                   availableModels.map(m => <option key={m} value={m}>{m}</option>)
