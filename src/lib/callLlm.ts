@@ -7,8 +7,17 @@ interface CallLlmParams {
   messages: Array<{ role: string; content: string }>;
 }
 
-function buildRequestBody(model: string | undefined, messages: Array<{ role: string; content: string }>) {
+function buildRequestBody(model: string | undefined, messages: Array<{ role: string; content: string }>, includeReasoning = true) {
   const resolvedModel = model || (config.defaultModel as string);
+  if (includeReasoning) {
+    return JSON.stringify({
+      model: resolvedModel,
+      messages,
+      temperature: LLM.TEMPERATURE,
+      max_tokens: LLM.MAX_TOKENS,
+      thinking_budget_tokens: LLM.MAX_REASONING_TOKENS,
+    });
+  }
   return JSON.stringify({
     model: resolvedModel,
     messages,
@@ -24,6 +33,10 @@ function checkResponseOk(response: Response): void {
     }
     throw new Error(`Llama server responded with status: ${response.status}`);
   }
+}
+
+function stripThinkingTags(content: string): string {
+  return content.replace(/<thinking>\s*([\s\S]*?)<\/thinking>/gi, '').replace(/<think>\s*([\s\S]*?)<\/think>/gi, '').trim();
 }
 
 export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Promise<string> {
@@ -43,14 +56,19 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
     checkResponseOk(response);
 
     const data = await response.json();
-    if (!data?.choices?.[0]?.message?.content) {
+    let content = data?.choices?.[0]?.message?.content || '';
+    content = stripThinkingTags(content);
+    if (!content) {
       throw new Error('The model returned an empty or invalid response');
     }
-    return data.choices[0].message.content.trim();
+    return content;
   } finally {
     clearTimeout(timeoutId);
   }
 }
+
+const THINK_OPEN = ['<thinking>', '<think>'];
+const THINK_CLOSE = ['</thinking>', '</think>'];
 
 export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): ReadableStream<string> {
   return new ReadableStream<string>({
@@ -61,12 +79,13 @@ export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): Re
       try {
         const completionsUrl = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
-        const resolvedModel = model || (config.defaultModel as string);
+         const resolvedModel = model || (config.defaultModel as string);
         const body = JSON.stringify({
           model: resolvedModel,
           messages,
           temperature: LLM.TEMPERATURE,
           max_tokens: LLM.MAX_TOKENS,
+          thinking_budget_tokens: LLM.MAX_REASONING_TOKENS,
           stream: true,
         });
         const response = await fetch(completionsUrl, {
@@ -86,6 +105,65 @@ export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): Re
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let inThinking = false;
+        let thinkingBuffer = '';
+        let contentBuffer = '';
+
+        function flushContent(): void {
+          if (contentBuffer) {
+            controller.enqueue(`chunk:${encodeURIComponent(contentBuffer)}\n`);
+            contentBuffer = '';
+          }
+        }
+
+        function flushThinking(): void {
+          if (thinkingBuffer) {
+            controller.enqueue(`reasoning:${encodeURIComponent(thinkingBuffer)}\n`);
+            thinkingBuffer = '';
+          }
+        }
+
+        function processText(text: string): void {
+          while (text.length > 0) {
+            if (inThinking) {
+              let foundClose = -1;
+              let closeLen = 0;
+              for (const tag of THINK_CLOSE) {
+                const idx = text.indexOf(tag);
+                if (idx !== -1 && (foundClose === -1 || idx < foundClose)) {
+                  foundClose = idx;
+                  closeLen = tag.length;
+                }
+              }
+              if (foundClose === -1) {
+                thinkingBuffer += text;
+                text = '';
+                break;
+              }
+              thinkingBuffer += text.slice(0, foundClose);
+              text = text.slice(foundClose + closeLen);
+              inThinking = false;
+            } else {
+              let foundOpen = -1;
+              let openLen = 0;
+              for (const tag of THINK_OPEN) {
+                const idx = text.indexOf(tag);
+                if (idx !== -1 && (foundOpen === -1 || idx < foundOpen)) {
+                  foundOpen = idx;
+                  openLen = tag.length;
+                }
+              }
+              if (foundOpen === -1) {
+                contentBuffer += text;
+                text = '';
+                break;
+              }
+              contentBuffer += text.slice(0, foundOpen);
+              text = text.slice(foundOpen + openLen);
+              inThinking = true;
+            }
+          }
+        }
 
         while (true) {
           const { done, value } = await reader.read();
@@ -108,9 +186,9 @@ export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): Re
               if (reasoningContent) {
                 controller.enqueue(`reasoning:${encodeURIComponent(reasoningContent)}\n`);
               }
-              const content = delta?.content;
+              const content = delta?.content || '';
               if (content) {
-                controller.enqueue(`chunk:${encodeURIComponent(content)}\n`);
+                processText(content);
               }
             } catch {
               continue;
@@ -118,6 +196,8 @@ export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): Re
           }
         }
 
+        flushContent();
+        flushThinking();
         controller.enqueue('done\n');
         controller.close();
         clearTimeout(timeoutId);

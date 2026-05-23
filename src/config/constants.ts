@@ -14,5 +14,6 @@ export const CHAT_PANEL = {
 export const LLM = {
   TEMPERATURE: 0.1,
   MAX_TOKENS: 4096,
+  MAX_REASONING_TOKENS: 2048,
 } as const;
 
