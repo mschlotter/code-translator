@@ -21,6 +21,7 @@ export function useTranslation() {
     if (!code) return;
     setIsLoading(true);
     setError(null);
+    setTargetCode('');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
     try {
