@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callLlm } from '@/lib/callLlm';
+import { callLlm, callLlmStream } from '@/lib/callLlm';
 import {
   errorResponse,
   validateLanguage,
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       return errorResponse('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required', 500);
     }
 
-    const { sourceLanguage, targetLanguage, question, sourceCode, targetCode, model, serverUrl } = await req.json();
+    const { sourceLanguage, targetLanguage, question, sourceCode, targetCode, model, serverUrl, stream } = await req.json();
 
     if (!question) {
       return errorResponse('Missing required field: question', 400);
@@ -50,13 +50,32 @@ export async function POST(req: Request) {
     let userPrompt = `I have the following code available for reference:\n\n${codeContext.join('\n\n')}\n\n`;
     userPrompt += `Question: ${question}`;
 
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
+
+    const resolvedServerUrl = resolveServerUrl(serverUrl);
+
+    if (stream) {
+      const stream = callLlmStream({
+        serverUrl: resolvedServerUrl,
+        model,
+        messages,
+      });
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     const answer = await callLlm({
-      serverUrl: resolveServerUrl(serverUrl),
+      serverUrl: resolvedServerUrl,
       model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      messages,
     });
 
     return NextResponse.json({ answer });

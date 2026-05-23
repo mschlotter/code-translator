@@ -12,6 +12,7 @@ import { TranslationControls } from '@/components/TranslationControls';
 import { SettingsModal } from '@/components/SettingsModal';
 import { ErrorToast } from '@/components/ErrorToast';
 import { ChatPanel } from '@/components/ChatPanel';
+import { ReasoningPanel } from '@/components/ReasoningPanel';
 
 const THEME_KEY = 'translator_theme';
 
@@ -26,6 +27,7 @@ export default function CodeTranslator() {
   const {
     sourceCode, setSourceCode,
     targetCode, setTargetCode, isLoading,
+    reasoningText,
     error, setError,
     lastTranslatedLang, setLastTranslatedLang,
     translate,
@@ -38,7 +40,7 @@ export default function CodeTranslator() {
   const [copied, setCopied] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  const { messages, isLoading: chatLoading, sendMessage: sendChatMessage } = useChat();
+  const { messages, isLoading: chatLoading, isStreaming: chatStreaming, sendMessage: sendChatMessage } = useChat();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -135,27 +137,32 @@ export default function CodeTranslator() {
             onSwap={handleSwap}
           />
 
-          <EditorPanel
-            label="Result"
-            lang={targetLang}
-            onLangChange={setTargetLang}
-            code={targetCode}
-            onCodeChange={() => {}}
-            readOnly
-            lastTranslatedLang={lastTranslatedLang}
-            theme={theme}
-            copyButton={
-              targetCode && (
-                <button
-                  onClick={handleCopy}
-                  className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  title="Copy to clipboard"
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-              )
-            }
-          />
+          <div className="flex flex-col">
+            <EditorPanel
+              label="Result"
+              lang={targetLang}
+              onLangChange={setTargetLang}
+              code={targetCode}
+              onCodeChange={() => {}}
+              readOnly
+              lastTranslatedLang={lastTranslatedLang}
+              theme={theme}
+              isStreaming={isLoading}
+              copyButton={
+                targetCode && (
+                  <button
+                    onClick={handleCopy}
+                    className="p-1.5 rounded hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </button>
+                )
+              }
+            />
+
+            <ReasoningPanel content={reasoningText} isStreaming={isLoading} />
+          </div>
         </div>
       </div>
 
@@ -180,6 +187,7 @@ export default function CodeTranslator() {
         onClose={() => setShowChat(false)}
         messages={messages}
         isLoading={chatLoading}
+        isStreaming={chatStreaming}
         onSend={(question) => sendChatMessage(question, sourceCode, targetCode, sourceLang, targetLang, selectedModel, serverUrl)}
       />
     </main>

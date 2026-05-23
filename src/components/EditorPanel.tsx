@@ -115,6 +115,7 @@ interface EditorPanelProps {
   lastTranslatedLang?: string;
   copyButton?: React.ReactNode;
   theme?: 'dark' | 'light';
+  isStreaming?: boolean;
 }
 
 export const EditorPanel: React.FC<EditorPanelProps> = ({
@@ -127,6 +128,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   lastTranslatedLang,
   copyButton,
   theme = 'dark',
+  isStreaming,
 }) => {
   const isDark = theme === 'dark';
   return (
@@ -134,6 +136,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
       <div className="flex items-center justify-between px-2">
         <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
           <Code2 size={16} /> {label}
+          {isStreaming && <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />}
         </label>
         <div className="flex items-center gap-2">
           {copyButton}
@@ -147,15 +150,20 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
               Translated code will appear here...
             </div>
           ) : (
-            <CodeMirror
-              value={code}
-              theme={isDark ? 'dark' : 'none'}
-              extensions={[(isDark ? darkEditorTheme : lightEditorTheme), ...(readOnly ? getLanguageExtensions(lastTranslatedLang || lang) : getLanguageExtensions(lang))]}
-              onChange={onCodeChange}
-              readOnly={readOnly}
-              className="text-sm font-mono h-full"
-              style={{ fontFamily: MONO_FONT }}
-            />
+            <div className="relative h-full">
+              <CodeMirror
+                value={code}
+                theme={isDark ? 'dark' : 'none'}
+                extensions={[(isDark ? darkEditorTheme : lightEditorTheme), ...(readOnly ? getLanguageExtensions(lastTranslatedLang || lang) : getLanguageExtensions(lang))]}
+                onChange={onCodeChange}
+                readOnly={readOnly}
+                className="text-sm font-mono h-full"
+                style={{ fontFamily: MONO_FONT }}
+              />
+              {isStreaming && (
+                <div className="streaming-cursor-overlay" />
+              )}
+            </div>
           )}
         </div>
       </div>

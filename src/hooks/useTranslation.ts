@@ -5,6 +5,7 @@ import { useAutoDismiss } from './useAutoDismiss';
 export function useTranslation() {
   const [sourceCode, setSourceCode] = useState('print("Hello World")');
   const [targetCode, setTargetCode] = useState('');
+  const [reasoningText, setReasoningText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastTranslatedLang, setLastTranslatedLang] = useState('');
@@ -22,6 +23,7 @@ export function useTranslation() {
     setIsLoading(true);
     setError(null);
     setTargetCode('');
+    setReasoningText('');
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
     try {
@@ -34,6 +36,7 @@ export function useTranslation() {
           code,
           model,
           serverUrl,
+          stream: true,
         }),
         signal: controller.signal,
       });
@@ -49,9 +52,56 @@ export function useTranslation() {
         }
         throw new Error(message);
       }
-      const data = await response.json();
-      setTargetCode(data.translatedCode);
-      setLastTranslatedLang(targetLang);
+
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let done = false;
+
+        while (!done) {
+          const { value, done: streamDone } = await reader.read();
+          if (streamDone) {
+            done = true;
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('chunk:')) {
+              const text = decodeURIComponent(line.slice(6));
+              setTargetCode(prev => prev + text);
+            }
+            if (line.startsWith('reasoning:')) {
+              const text = decodeURIComponent(line.slice(10));
+              setReasoningText(prev => prev + text);
+            }
+            if (line === 'done') {
+              done = true;
+            }
+          }
+        }
+
+        if (!buffer) {
+          setLastTranslatedLang(targetLang);
+        } else {
+          const lines = buffer.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('chunk:')) {
+              const text = decodeURIComponent(line.slice(6));
+              setTargetCode(prev => prev + text);
+            }
+            if (line.startsWith('reasoning:')) {
+              const text = decodeURIComponent(line.slice(10));
+              setReasoningText(prev => prev + text);
+            }
+          }
+          setLastTranslatedLang(targetLang);
+        }
+      }
     } catch (err: unknown) {
       const e = err as { name?: string; message?: string };
       if (e.name !== 'AbortError') {
@@ -68,6 +118,7 @@ export function useTranslation() {
     setSourceCode,
     targetCode,
     setTargetCode,
+    reasoningText,
     isLoading,
     error,
     setError,

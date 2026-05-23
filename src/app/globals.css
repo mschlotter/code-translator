@@ -114,3 +114,52 @@ body {
 [data-theme="dark"] .markdown-content pre {
   background: #1e293b;
 }
+
+.streaming-cursor-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.streaming-cursor-overlay::after {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 1.2em;
+  margin-left: 2px;
+  background-color: #6366f1;
+  animation: streaming-blink 1s step-end infinite;
+}
+
+.streaming-cursor-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #6366f1;
+  animation: streaming-blink 1s step-end infinite;
+  margin-left: 4px;
+}
+
+@keyframes streaming-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.reasoning-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reasoning-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.reasoning-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.reasoning-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

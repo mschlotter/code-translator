@@ -16,6 +16,7 @@ interface ChatPanelProps {
   onClose: () => void;
   messages: ChatMessage[];
   isLoading: boolean;
+  isStreaming?: boolean;
   onSend: (question: string) => void;
 }
 
@@ -24,6 +25,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onClose,
   messages,
   isLoading,
+  isStreaming,
   onSend,
 }) => {
   const [question, setQuestion] = useState('');
@@ -171,12 +173,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             </div>
           </div>
         ))}
-        {isLoading && (
+        {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].content === '' && (
           <div className="flex justify-start">
             <div className="bg-[var(--bg-hover)] text-[var(--text-primary)] px-3.5 py-2.5 rounded-2xl rounded-bl-md">
               <Loader2 className="animate-spin" size={16} />
             </div>
           </div>
+        )}
+        {isStreaming && (
+          <div className="streaming-cursor-dot" />
         )}
         <div ref={messagesEndRef} />
       </div>

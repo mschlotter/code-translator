@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callLlm } from '@/lib/callLlm';
+import { callLlm, callLlmStream } from '@/lib/callLlm';
 import {
   errorResponse,
   validateLanguage,
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       return errorResponse('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required', 500);
     }
 
-    const { sourceLanguage, targetLanguage, code, model, serverUrl } = await req.json();
+    const { sourceLanguage, targetLanguage, code, model, serverUrl, stream } = await req.json();
 
     if (!sourceLanguage || !targetLanguage || !code) {
       return errorResponse('Missing required fields', 400);
@@ -32,13 +32,32 @@ Provide ONLY the translated code. Do not include any explanations, markdown code
 Source code (${sourceLanguage}):
 ${code}`;
 
+    const messages = [
+      { role: 'system', content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.' },
+      { role: 'user', content: prompt },
+    ];
+
+    const resolvedServerUrl = resolveServerUrl(serverUrl);
+
+    if (stream) {
+      const stream = callLlmStream({
+        serverUrl: resolvedServerUrl,
+        model,
+        messages,
+      });
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
     const translatedCode = await callLlm({
-      serverUrl: resolveServerUrl(serverUrl),
+      serverUrl: resolvedServerUrl,
       model,
-      messages: [
-        { role: 'system', content: 'You are an expert code translator. Your task is to translate code between programming languages accurately and efficiently.' },
-        { role: 'user', content: prompt },
-      ],
+      messages,
     });
 
     return NextResponse.json({ translatedCode });
