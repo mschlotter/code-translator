@@ -57,7 +57,7 @@ Copy `.env.example` to `.env.local` and set the following:
 |---|---|---|---|
 | `NEXT_PUBLIC_LLAMA_SERVER_URL` | Yes | URL of your local LLM server | `http://localhost:11435` |
 | `NEXT_PUBLIC_DEFAULT_MODEL` | Yes | Default model to use | `unsloth/Qwen3.6-35B-A3B-GGUF:Q5_K_XL` |
-| `MAX_CODE_SIZE` | No | Max code size in bytes (default: 100KB) | `102400` |
+
 
 ### LLM Servers
 
@@ -69,7 +69,7 @@ llama-server --models-dir ./models --port 11435
 ```
 Or using a configuration file:
 ```bash
-llama-server --models-preset ./models.ini --port 8080
+llama-server --models-preset ./models.ini --port 11435
 ```
 
 ## Project Structure
