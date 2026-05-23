@@ -17,3 +17,5 @@ export const LLM = {
   MAX_REASONING_TOKENS: 2048,
 } as const;
 
+export const MAX_CODE_SIZE = 102400;
+

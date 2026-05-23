@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { config } from '@/config/server';
+import { MAX_CODE_SIZE } from '@/config/constants';
 import { SUPPORTED_LANGUAGES } from '@/config/languages';
 
 export function errorResponse(message: string, status: number) {
@@ -19,9 +19,9 @@ export function validateLanguage(lang: string, label: string): NextResponse | nu
 
 export function validateCodeSize(code: string, label: string): NextResponse | null {
   const bytes = new TextEncoder().encode(code).length;
-  if (bytes > config.maxCodeSize) {
+  if (bytes > MAX_CODE_SIZE) {
     const sizeInKB = (bytes / 1024).toFixed(1);
-    const maxKB = (config.maxCodeSize / 1024).toFixed(1);
+    const maxKB = (MAX_CODE_SIZE / 1024).toFixed(1);
     return errorResponse(`${label} code size (${sizeInKB}KB) exceeds the maximum allowed size of ${maxKB}KB.`, 400);
   }
   return null;
