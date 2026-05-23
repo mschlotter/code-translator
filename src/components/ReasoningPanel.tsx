@@ -6,9 +6,10 @@ import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
 interface ReasoningPanelProps {
   content: string;
   isStreaming: boolean;
+  enableReasoning?: boolean;
 }
 
-export const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ content, isStreaming }) => {
+export const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ content, isStreaming, enableReasoning = true }) => {
   const [expanded, setExpanded] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -18,7 +19,8 @@ export const ReasoningPanel: React.FC<ReasoningPanelProps> = ({ content, isStrea
     }
   }, [content, expanded]);
 
-  if (!content && !isStreaming) return null;
+  if (!enableReasoning && !content && !isStreaming) return null;
+  if (!enableReasoning) return null;
 
   return (
     <div className="mt-3 rounded-xl border border-[var(--border-color)] overflow-hidden bg-[var(--bg-panel)] shadow-lg">

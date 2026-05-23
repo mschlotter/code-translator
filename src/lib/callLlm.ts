@@ -5,11 +5,12 @@ interface CallLlmParams {
   serverUrl: string;
   model: string | undefined;
   messages: Array<{ role: string; content: string }>;
+  enableReasoning?: boolean;
 }
 
-function buildRequestBody(model: string | undefined, messages: Array<{ role: string; content: string }>, includeReasoning = true) {
+function buildRequestBody(model: string | undefined, messages: Array<{ role: string; content: string }>, enableReasoning = true) {
   const resolvedModel = model || (config.defaultModel as string);
-  if (includeReasoning) {
+  if (enableReasoning) {
     return JSON.stringify({
       model: resolvedModel,
       messages,
@@ -23,6 +24,7 @@ function buildRequestBody(model: string | undefined, messages: Array<{ role: str
     messages,
     temperature: LLM.TEMPERATURE,
     max_tokens: LLM.MAX_TOKENS,
+    chat_template_kwargs: { enable_thinking: false },
   });
 }
 
@@ -39,7 +41,7 @@ function stripThinkingTags(content: string): string {
   return content.replace(/<thinking>\s*([\s\S]*?)<\/thinking>/gi, '').replace(/<think>\s*([\s\S]*?)<\/think>/gi, '').trim();
 }
 
-export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Promise<string> {
+export async function callLlm({ serverUrl, model, messages, enableReasoning = true }: CallLlmParams): Promise<string> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.SERVER_FETCH);
 
@@ -49,7 +51,7 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
     const response = await fetch(completionsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: buildRequestBody(model, messages),
+      body: buildRequestBody(model, messages, enableReasoning),
       signal: controller.signal,
     });
 
@@ -70,7 +72,7 @@ export async function callLlm({ serverUrl, model, messages }: CallLlmParams): Pr
 const THINK_OPEN = ['<thinking>', '<think>'];
 const THINK_CLOSE = ['</thinking>', '</think>'];
 
-export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): ReadableStream<string> {
+export function callLlmStream({ serverUrl, model, messages, enableReasoning = true }: CallLlmParams): ReadableStream<string> {
   return new ReadableStream<string>({
     async start(controller) {
       const fetchController = new AbortController();
@@ -79,13 +81,8 @@ export function callLlmStream({ serverUrl, model, messages }: CallLlmParams): Re
       try {
         const completionsUrl = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
 
-         const resolvedModel = model || (config.defaultModel as string);
         const body = JSON.stringify({
-          model: resolvedModel,
-          messages,
-          temperature: LLM.TEMPERATURE,
-          max_tokens: LLM.MAX_TOKENS,
-          thinking_budget_tokens: LLM.MAX_REASONING_TOKENS,
+          ...JSON.parse(buildRequestBody(model, messages, enableReasoning)),
           stream: true,
         });
         const response = await fetch(completionsUrl, {

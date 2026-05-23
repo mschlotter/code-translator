@@ -7,6 +7,7 @@ export function useSettings() {
   const [mounted, setMounted] = useState(false);
   const [serverUrl, setServerUrl] = useState(config.llamaServerUrl);
   const [selectedModel, setSelectedModel] = useState('');
+  const [enableReasoning, setEnableReasoning] = useState(true);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
@@ -50,10 +51,13 @@ export function useSettings() {
     if (!mounted) return;
     const savedModel = localStorage.getItem('translator_selected_model');
     const savedUrl = localStorage.getItem('translator_server_url');
+    const savedReasoning = localStorage.getItem('translator_enable_reasoning');
     const model = savedModel || config.defaultModel || '';
     const url = savedUrl || config.llamaServerUrl;
+    const reasoning = savedReasoning === null ? true : savedReasoning === 'true';
     setSelectedModel(model);
     setServerUrl(url);
+    setEnableReasoning(reasoning);
     fetchModels(model);
   }, [mounted, fetchModels]);
 
@@ -61,7 +65,8 @@ export function useSettings() {
     if (!mounted) return;
     localStorage.setItem('translator_server_url', serverUrl);
     localStorage.setItem('translator_selected_model', selectedModel);
-  }, [mounted, serverUrl, selectedModel]);
+    localStorage.setItem('translator_enable_reasoning', String(enableReasoning));
+  }, [mounted, serverUrl, selectedModel, enableReasoning]);
 
   return {
     mounted,
@@ -69,6 +74,8 @@ export function useSettings() {
     setServerUrl,
     selectedModel,
     setSelectedModel,
+    enableReasoning,
+    setEnableReasoning,
     availableModels,
     isFetchingModels,
     modelsError,

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Brain } from 'lucide-react';
 
 interface SettingsModalProps {
   open: boolean;
@@ -10,6 +10,8 @@ interface SettingsModalProps {
   onServerUrlChange: (url: string) => void;
   selectedModel: string;
   onModelChange: (model: string) => void;
+  enableReasoning: boolean;
+  onEnableReasoningChange: (enabled: boolean) => void;
   availableModels: string[];
   isFetchingModels: boolean;
   onRefreshModels: () => void;
@@ -24,6 +26,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onServerUrlChange,
   selectedModel,
   onModelChange,
+  enableReasoning,
+  onEnableReasoningChange,
   availableModels,
   isFetchingModels,
   onRefreshModels,
@@ -77,6 +81,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {isFetchingModels ? <Loader2 className="animate-spin" size={18} /> : 'Refresh'}
               </button>
             </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-2">
+              <Brain size={16} />
+              Enable reasoning
+            </label>
+            <button
+              onClick={() => onEnableReasoningChange(!enableReasoning)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${enableReasoning ? 'bg-indigo-600' : 'bg-neutral-400'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${enableReasoning ? 'translate-x-5' : ''}`} />
+            </button>
           </div>
           <button onClick={onClose} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-all">
             Save & Close

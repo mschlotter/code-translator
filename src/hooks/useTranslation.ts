@@ -18,6 +18,7 @@ export function useTranslation() {
     code: string,
     model: string,
     serverUrl: string,
+    enableReasoning: boolean,
   ) => {
     if (!code) return;
     setIsLoading(true);
@@ -36,6 +37,7 @@ export function useTranslation() {
           code,
           model,
           serverUrl,
+          enableReasoning,
           stream: true,
         }),
         signal: controller.signal,

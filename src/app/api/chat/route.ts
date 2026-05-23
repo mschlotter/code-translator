@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       return errorResponse('NEXT_PUBLIC_DEFAULT_MODEL environment variable is required', 500);
     }
 
-    const { sourceLanguage, targetLanguage, question, sourceCode, targetCode, model, serverUrl, stream } = await req.json();
+    const { sourceLanguage, targetLanguage, question, sourceCode, targetCode, model, serverUrl, enableReasoning, stream } = await req.json();
 
     if (!question) {
       return errorResponse('Missing required field: question', 400);
@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         serverUrl: resolvedServerUrl,
         model,
         messages,
+        enableReasoning: enableReasoning !== false,
       });
       return new Response(stream, {
         headers: {
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
       serverUrl: resolvedServerUrl,
       model,
       messages,
+      enableReasoning: enableReasoning !== false,
     });
 
     return NextResponse.json({ answer });

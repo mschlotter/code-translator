@@ -21,6 +21,7 @@ interface UseChatReturn {
     targetLanguage: string,
     model: string,
     serverUrl: string,
+    enableReasoning: boolean,
   ) => void;
 }
 
@@ -41,6 +42,7 @@ export function useChat(): UseChatReturn {
     targetLanguage: string,
     model: string,
     serverUrl: string,
+    enableReasoning: boolean,
   ) => {
     if (!question.trim()) return;
 
@@ -65,6 +67,7 @@ export function useChat(): UseChatReturn {
           targetLanguage,
           model,
           serverUrl,
+          enableReasoning,
           stream: true,
         }),
         signal: controller.signal,

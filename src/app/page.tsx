@@ -20,6 +20,7 @@ export default function CodeTranslator() {
   const {
     mounted, serverUrl, setServerUrl,
     selectedModel, setSelectedModel,
+    enableReasoning, setEnableReasoning,
     availableModels, isFetchingModels, fetchModels,
     modelsError,
   } = useSettings();
@@ -57,8 +58,8 @@ export default function CodeTranslator() {
   }, [theme]);
 
   const handleTranslate = useCallback(() => {
-    translate(sourceLang, targetLang, sourceCode, selectedModel, serverUrl);
-  }, [translate, sourceLang, targetLang, sourceCode, selectedModel, serverUrl]);
+    translate(sourceLang, targetLang, sourceCode, selectedModel, serverUrl, enableReasoning);
+  }, [translate, sourceLang, targetLang, sourceCode, selectedModel, serverUrl, enableReasoning]);
 
   const handleSwap = useCallback(() => {
     setSourceCode(targetCode);
@@ -161,7 +162,7 @@ export default function CodeTranslator() {
               }
             />
 
-            <ReasoningPanel content={reasoningText} isStreaming={isLoading} />
+            <ReasoningPanel content={reasoningText} isStreaming={isLoading} enableReasoning={enableReasoning} />
           </div>
         </div>
       </div>
@@ -173,6 +174,8 @@ export default function CodeTranslator() {
         onServerUrlChange={setServerUrl}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        enableReasoning={enableReasoning}
+        onEnableReasoningChange={setEnableReasoning}
         availableModels={availableModels}
         isFetchingModels={isFetchingModels}
         onRefreshModels={() => fetchModels(selectedModel)}
@@ -188,7 +191,7 @@ export default function CodeTranslator() {
         messages={messages}
         isLoading={chatLoading}
         isStreaming={chatStreaming}
-        onSend={(question) => sendChatMessage(question, sourceCode, targetCode, sourceLang, targetLang, selectedModel, serverUrl)}
+        onSend={(question) => sendChatMessage(question, sourceCode, targetCode, sourceLang, targetLang, selectedModel, serverUrl, enableReasoning)}
       />
     </main>
   );
