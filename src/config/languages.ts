@@ -15,6 +15,7 @@ export const SUPPORTED_LANGUAGES = [
   "Pascal",
   "Perl",
   "PHP",
+  "Powershell",
   "Python",
   "R",
   "Ruby",
