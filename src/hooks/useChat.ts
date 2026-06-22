@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAutoDismiss } from './useAutoDismiss';
-import { TIMEOUT } from '@/config/constants';
+import { TIMEOUT, isErrorWithMessage } from '@/config/constants';
 import { parseStreamLine } from '@/lib/streamParser';
 
 export interface ChatMessage {
@@ -32,6 +32,7 @@ export function useChat(): UseChatReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const [reasoningText, setReasoningText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useAutoDismiss(error, () => setError(null));
 
@@ -45,6 +46,9 @@ export function useChat(): UseChatReturn {
     serverUrl: string,
     enableReasoning: boolean,
   ) => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
     if (!question.trim()) return;
 
     setIsLoading(true);
@@ -54,6 +58,7 @@ export function useChat(): UseChatReturn {
     setMessages(prev => [...prev, { role: 'user', content: question.trim() }]);
 
     const controller = new AbortController();
+    abortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
 
     try {
@@ -74,6 +79,7 @@ export function useChat(): UseChatReturn {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+      abortRef.current = null;
 
       if (!response.ok) {
         const data = await response.json();
@@ -143,15 +149,27 @@ export function useChat(): UseChatReturn {
         }
       }
     } catch (err: unknown) {
-      const e = err as { name?: string; message?: string };
-      if (e.name !== 'AbortError') {
-        setError(e.message || 'An unexpected error occurred');
+      clearTimeout(timeoutId);
+      abortRef.current = null;
+      if (isErrorWithMessage(err)) {
+        if (err.name !== 'AbortError') {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred');
       }
     } finally {
-      clearTimeout(timeoutId);
       setIsLoading(false);
       setIsStreaming(false);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
   }, []);
 
   return { messages, isLoading, isStreaming, reasoningText, error, sendMessage };

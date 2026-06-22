@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { TIMEOUT } from '@/config/constants';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { TIMEOUT, isErrorWithMessage } from '@/config/constants';
 import { useAutoDismiss } from './useAutoDismiss';
 import { parseStreamLine } from '@/lib/streamParser';
 
@@ -10,6 +10,7 @@ export function useTranslation() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastTranslatedLang, setLastTranslatedLang] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
 
   useAutoDismiss(error, () => setError(null));
 
@@ -22,11 +23,15 @@ export function useTranslation() {
     enableReasoning: boolean,
   ) => {
     if (!code) return;
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
     setIsLoading(true);
     setError(null);
     setTargetCode('');
     setReasoningText('');
     const controller = new AbortController();
+    abortRef.current = controller;
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.TRANSLATION_FETCH);
     try {
       const response = await fetch('/api/translate', {
@@ -44,6 +49,7 @@ export function useTranslation() {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+      abortRef.current = null;
       if (!response.ok) {
         let message = 'Translation failed';
         try {
@@ -102,14 +108,27 @@ export function useTranslation() {
         setLastTranslatedLang(targetLang);
       }
     } catch (err: unknown) {
-      const e = err as { name?: string; message?: string };
-      if (e.name !== 'AbortError') {
-        setError(e.message || 'An unexpected error occurred');
+      clearTimeout(timeoutId);
+      abortRef.current = null;
+      if (isErrorWithMessage(err)) {
+        if (err.name !== 'AbortError') {
+          setError(err.message);
+        }
+      } else {
+        setError('An unexpected error occurred');
       }
     } finally {
       clearTimeout(timeoutId);
       setIsLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.abort();
+      }
+    };
   }, []);
 
   return {

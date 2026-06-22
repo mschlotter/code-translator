@@ -19,3 +19,7 @@ export const LLM = {
 
 export const MAX_CODE_SIZE = 102400;
 
+
+export function isErrorWithMessage(err: unknown): err is Error {
+  return typeof err === 'object' && err !== null && 'message' in err && typeof (err as Error).message === 'string';
+}
