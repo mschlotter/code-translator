@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import { SUPPORTED_LANGUAGES } from '@/config/languages';
 
 interface HeaderProps {
   theme: 'dark' | 'light';
@@ -21,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ theme }) => {
         Code Translator
       </h1>
       <p className="text-[var(--text-secondary)] max-w-2xl text-sm md:text-base">
-        Translate code between 26 languages using local LLMs.
+        Translate code between {SUPPORTED_LANGUAGES.length} languages using local LLMs.
       </p>
     </header>
   );

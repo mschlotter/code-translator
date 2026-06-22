@@ -32,7 +32,6 @@ import { stex } from '@codemirror/legacy-modes/mode/stex';
 import { tcl } from '@codemirror/legacy-modes/mode/tcl';
 import { powerShell } from '@codemirror/legacy-modes/mode/powershell';
 
-const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
 const darkEditorTheme = EditorView.theme({
   "&": { height: "100%", overflow: "hidden" },
@@ -83,9 +82,15 @@ function getLanguageExtension(lang: string): Extension | null {
   }
 }
 
+const langExtCache = new Map<string, Extension[]>();
+
 export function getLanguageExtensions(lang: string): Extension[] {
+  const cached = langExtCache.get(lang);
+  if (cached) return cached;
   const ext = getLanguageExtension(lang);
-  return ext ? [ext] : [];
+  const result = ext ? [ext] : [];
+  langExtCache.set(lang, result);
+  return result;
 }
 
 interface LanguageSelectorProps {
@@ -158,7 +163,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
                 onChange={onCodeChange}
                 readOnly={readOnly}
                 className="text-sm font-mono h-full"
-                style={{ fontFamily: MONO_FONT }}
+                style={{ fontFamily: 'var(--font-mono)' }}
               />
               {isStreaming && (
                 <div className="streaming-cursor-overlay" />

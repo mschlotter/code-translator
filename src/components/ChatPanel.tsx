@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { CHAT_PANEL } from '@/config/constants';
 import { X, MessageCircle, Send, Loader2 } from 'lucide-react';
 
+const MARKDOWN_PLUGINS: import('unified').PluggableList = [remarkGfm];
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -47,8 +48,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: isLoading ? 'auto' : 'smooth' });
+    }
+  }, [messages, isLoading]);
 
   const handlePanelMouseDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -163,7 +166,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             >
               {msg.role === 'assistant' ? (
                 <div className="markdown-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS}>
                     {msg.content}
                   </ReactMarkdown>
                 </div>

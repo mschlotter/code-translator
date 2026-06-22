@@ -1,10 +1,22 @@
 import { config } from '@/config/server';
 import { LLM, TIMEOUT } from '@/config/constants';
+function mergeSignals(...signals: AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  for (const s of signals) {
+    if (s.aborted) {
+      controller.abort();
+      break;
+    }
+    s.addEventListener('abort', () => controller.abort(), { once: true });
+  }
+  return controller.signal;
+}
 
 interface CallLlmParams {
   serverUrl: string;
   model: string | undefined;
   messages: Array<{ role: string; content: string }>;
+  signal?: AbortSignal;
   enableReasoning?: boolean;
 }
 
@@ -72,11 +84,14 @@ export async function callLlm({ serverUrl, model, messages, enableReasoning = tr
 const THINK_OPEN = ['<thinking>', '<think>'];
 const THINK_CLOSE = ['</thinking>', '</think>'];
 
-export function callLlmStream({ serverUrl, model, messages, enableReasoning = true }: CallLlmParams): ReadableStream<string> {
+export function callLlmStream({ serverUrl, model, messages, enableReasoning = true, signal }: CallLlmParams): ReadableStream<string> {
   return new ReadableStream<string>({
     async start(controller) {
       const fetchController = new AbortController();
       const timeoutId = setTimeout(() => fetchController.abort(), TIMEOUT.SERVER_FETCH);
+
+      // Merge with external signal (e.g. request abort)
+      const mergedSignal = signal ? mergeSignals(signal, fetchController.signal) : fetchController.signal;
 
       try {
         const completionsUrl = `${serverUrl.replace(/\/$/, '')}/v1/chat/completions`;
@@ -89,7 +104,7 @@ export function callLlmStream({ serverUrl, model, messages, enableReasoning = tr
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body,
-          signal: fetchController.signal,
+          signal: mergedSignal,
         });
 
         checkResponseOk(response);

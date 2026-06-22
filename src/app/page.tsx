@@ -67,15 +67,15 @@ export default function CodeTranslator() {
     setSourceLang(targetLang);
     setTargetLang(sourceLang);
     setLastTranslatedLang(sourceLang);
-  }, [targetCode, sourceCode, targetLang, sourceLang, setSourceCode, setTargetCode]);
+  }, [targetCode, sourceCode, targetLang, sourceLang, setSourceCode, setTargetCode, setLastTranslatedLang]);
 
   const handleCopy = useCallback(() => {
     if (!targetCode) return;
     navigator.clipboard.writeText(targetCode).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), TIMEOUT.COPY_TOAST_DURATION);
-    });
-  }, [targetCode]);
+    }).catch(() => setError('Failed to copy to clipboard'));
+  }, [targetCode, setError]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

@@ -63,6 +63,7 @@ export async function POST(req: Request) {
         model,
         messages,
         enableReasoning: enableReasoning !== false,
+        signal: req.signal,
       });
       return new Response(stream, {
         headers: {

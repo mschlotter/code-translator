@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAutoDismiss } from './useAutoDismiss';
 import { TIMEOUT } from '@/config/constants';
+import { parseStreamLine } from '@/lib/streamParser';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -101,44 +102,42 @@ export function useChat(): UseChatReturn {
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.startsWith('chunk:')) {
-              const text = decodeURIComponent(line.slice(6));
+            const result = parseStreamLine(line);
+            if (result?.chunk !== undefined) {
               setMessages(prev => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
                 if (last && last.role === 'assistant') {
-                  updated[updated.length - 1] = { ...last, content: last.content + text };
+                  updated[updated.length - 1] = { ...last, content: last.content + result.chunk! };
                 }
                 return updated;
               });
             }
-            if (line.startsWith('reasoning:')) {
-              const text = decodeURIComponent(line.slice(10));
-              setReasoningText(prev => prev + text);
+            if (result?.reasoning) {
+              setReasoningText(prev => prev + result.reasoning);
             }
-            if (line === 'done') {
+            if (result?.done) {
               done = true;
             }
           }
         }
 
+        // Process any remaining buffer
         if (buffer) {
-          const lines = buffer.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('chunk:')) {
-              const text = decodeURIComponent(line.slice(6));
+          for (const line of buffer.split('\n')) {
+            const result = parseStreamLine(line);
+            if (result?.chunk !== undefined) {
               setMessages(prev => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
                 if (last && last.role === 'assistant') {
-                  updated[updated.length - 1] = { ...last, content: last.content + text };
+                  updated[updated.length - 1] = { ...last, content: last.content + result.chunk! };
                 }
                 return updated;
               });
             }
-            if (line.startsWith('reasoning:')) {
-              const text = decodeURIComponent(line.slice(10));
-              setReasoningText(prev => prev + text);
+            if (result?.reasoning) {
+              setReasoningText(prev => prev + result.reasoning);
             }
           }
         }

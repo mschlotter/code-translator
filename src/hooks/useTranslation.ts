@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { TIMEOUT } from '@/config/constants';
 import { useAutoDismiss } from './useAutoDismiss';
+import { parseStreamLine } from '@/lib/streamParser';
 
 export function useTranslation() {
   const [sourceCode, setSourceCode] = useState('print("Hello World")');
@@ -73,36 +74,32 @@ export function useTranslation() {
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (line.startsWith('chunk:')) {
-              const text = decodeURIComponent(line.slice(6));
-              setTargetCode(prev => prev + text);
+            const result = parseStreamLine(line);
+            if (result?.chunk !== undefined) {
+              setTargetCode(prev => prev + result.chunk);
             }
-            if (line.startsWith('reasoning:')) {
-              const text = decodeURIComponent(line.slice(10));
-              setReasoningText(prev => prev + text);
+            if (result?.reasoning) {
+              setReasoningText(prev => prev + result.reasoning);
             }
-            if (line === 'done') {
+            if (result?.done) {
               done = true;
             }
           }
         }
 
-        if (!buffer) {
-          setLastTranslatedLang(targetLang);
-        } else {
-          const lines = buffer.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('chunk:')) {
-              const text = decodeURIComponent(line.slice(6));
-              setTargetCode(prev => prev + text);
+        // Process any remaining buffer
+        if (buffer) {
+          for (const line of buffer.split('\n')) {
+            const result = parseStreamLine(line);
+            if (result?.chunk !== undefined) {
+              setTargetCode(prev => prev + result.chunk);
             }
-            if (line.startsWith('reasoning:')) {
-              const text = decodeURIComponent(line.slice(10));
-              setReasoningText(prev => prev + text);
+            if (result?.reasoning) {
+              setReasoningText(prev => prev + result.reasoning);
             }
           }
-          setLastTranslatedLang(targetLang);
         }
+        setLastTranslatedLang(targetLang);
       }
     } catch (err: unknown) {
       const e = err as { name?: string; message?: string };

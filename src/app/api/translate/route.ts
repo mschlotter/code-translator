@@ -45,6 +45,7 @@ ${code}`;
         model,
         messages,
         enableReasoning: enableReasoning !== false,
+        signal: req.signal,
       });
       return new Response(stream, {
         headers: {
