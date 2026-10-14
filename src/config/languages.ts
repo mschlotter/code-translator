@@ -9,6 +9,7 @@ export const SUPPORTED_LANGUAGES = [
   "Java",
   "Javascript",
   "Julia",
+  "LaTeX3",
   "Lua",
   "Mathematica",
   "Matlab",

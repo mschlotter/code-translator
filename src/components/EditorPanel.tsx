@@ -77,6 +77,7 @@ function getLanguageExtension(lang: string): Extension | null {
     case "Powershell": return StreamLanguage.define(powerShell);
     case "Swift": return StreamLanguage.define(swift);
     case "TeX": return StreamLanguage.define(stex);
+    case "LaTeX3": return StreamLanguage.define(stex);
     case "TCL": return StreamLanguage.define(tcl);
     default: return null;
   }
